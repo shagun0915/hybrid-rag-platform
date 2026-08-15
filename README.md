@@ -340,8 +340,102 @@ Re-running the same 11-question suite three times produced different
 pass/fail results on two borderline questions — not from retrieval
 changing, but from Ollama's `llama3.1:8b` phrasing answers differently
 run to run given weakly-ranked context. A genuine tradeoff of the
-free/local provider path; a larger model would likely show less
-variance on the same borderline evidence (not directly A/B tested here).
+free/local provider path.
+
+**Update — the A/B test flagged above as not yet run has now been run.**
+Adding Groq as a third provider (see Deployment) made a direct,
+same-corpus, same-question comparison possible: the exact VAMP question
+that failed against `llama3.1:8b` across three separate attempts and
+investigation angles (flat denial, hedged misattribution, reformulation
+guessing the wrong domain — see the case studies below) was asked again,
+unchanged, against Groq's `llama-3.3-70b-versatile`. Result: *"The full
+form of VAMP is Visa Acquirer Monitoring Program (Excerpt 1)"* — correct,
+confident, properly cited, first attempt, no reformulation needed. Same
+retrieval pipeline, same chunk, same citation format — the only variable
+that changed was model size. This confirms the earlier prediction rather
+than just asserting it.
+
+### A third case: retrieval worked correctly, but the model still couldn't answer confidently
+
+Uploading a new, unrelated document (an internal design doc mentioning
+"VAMP," an acronym) and asking *"What is full form of VAMP?"* produced a
+flat denial: *"The full form of VAMP is not mentioned in the provided
+context excerpts."* The first hypothesis — that this was the same
+corpus-imbalance retrieval miss as the SonarQube case — turned out to be
+**wrong**, and checking it properly is itself worth documenting.
+
+**What actually happened, verified against the real chunk data** (via
+`GET /documents/{id}/chunks`, cross-checked against the source
+document): the chunk containing the definition — *"The ERP VAMP (Visa
+Acquirer Monitoring Program) Remediation Portal requires..."* — was
+**not** missing from the candidate pool. It was chunk 0, the single
+highest-scored retrieved result (`0.1241`), sitting in plain prose in
+the middle of that chunk's content. Retrieval, chunking, and reranking
+all did their job correctly this time.
+
+**To isolate the real cause, the same chunk and question were tested
+directly against Ollama, completely outside the RAG pipeline** — no
+competing excerpts, no citation-format system prompt, just the one
+chunk and one question piped straight into `ollama run llama3.1:8b`.
+The result: the model *did* locate the correct phrase, but hedged
+instead of committing to it — *"the full form of VAMP is not explicitly
+mentioned... however, it appears to be related to the Visa Acquirer
+Monitoring Program"* — and misattributed where it came from, claiming
+it was "indicated in the document title" (the title never contains that
+phrase; it's in the Overview paragraph). The model found the fact and
+still couldn't cite it precisely.
+
+**And the isolated test's hedged-but-partially-correct answer was
+still better than the real system's flat denial.** The production
+prompt — five "Excerpt N" blocks plus citation-format instructions —
+appears to make this specific weakness *worse* for a model this size,
+not better. Added structure pushed the model toward a confident wrong
+answer instead of the tentative right one it gave with a simpler prompt.
+
+**The honest conclusion:** this is a generation-side precision and
+attribution weakness in the free local model, not a retrieval bug —
+three separate, verified layers of evidence (chunk data, isolated model
+test, prompt-complexity comparison), not a guess. Confirming whether a
+larger model (Claude, via `LLM_PROVIDER=anthropic`) avoids this specific
+failure mode is a natural next test, not yet run here due to API
+billing constraints at the time — noted as an open question rather than
+silently skipped.
+
+### A fourth case: query reformulation guessed the wrong domain entirely
+
+Re-running the VAMP question with query expansion enabled surfaced a new
+failure mode, not the one being tested for. Attempt 1 (with expansion)
+correctly promoted the right chunk to the top of retrieval — confirming
+the fix above — but still scored below threshold on rerank, so attempt 2
+fired. The LLM's reformulated query: *"Define VAMP in medical
+terminology"*, which then expanded into variants **"Vascular Adhesion
+Molecule"** and **"Vascular Cell Adhesion Molecule"** — real biology
+terms, entirely unrelated to this corpus, which is about a Visa
+remediation portal.
+
+The reformulation step didn't just reword the question — it **guessed a
+specific, wrong domain** for an ambiguous acronym and searched for that
+guess instead of a paraphrase of what was actually asked. Attempt 2's
+top score dropped to `0.0031`, worse than attempt 1. The system still
+correctly refused to hallucinate an answer from that irrelevant
+context — grounding held once again — but a real opportunity was lost:
+attempt 1's retrieval had already found the right chunk, and
+reformulation searched *away* from it instead of refining around it.
+
+**Root cause:** `reformulate_query()` (`query_reformulation.py`) asks
+the LLM to produce a better search query with no visibility into what's
+actually in the corpus — so for a generic acronym like "VAMP," it falls
+back on the model's own general-knowledge guess about what the acronym
+*probably* means, which has nothing to do with what's actually been
+uploaded.
+
+**Real fix (v2, not built):** ground the reformulation prompt in the
+corpus itself — e.g., include a few high-scoring terms or filenames
+from attempt 1's own candidates as context, so reformulation refines
+around what's actually present rather than guessing a domain from
+scratch. A smaller, more contained fix than it sounds: the data needed
+(attempt 1's candidates) already exists in the loop, it just isn't
+currently passed to `reformulate_query()`.
 
 ### A third case: retrieval worked correctly, but the model still couldn't answer confidently
 
