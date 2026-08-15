@@ -10,7 +10,7 @@ python-dotenv==1.0.1
 # --- Day 2: ingestion ---
 python-multipart==0.0.12   # required by FastAPI to parse file uploads
 pypdf==5.0.1                 # PDF text extraction
-fastembed==0.4.1             # lightweight local embeddings (ONNX, not full torch)
+fastembed==0.4.1             # embeddings (Day 2) AND cross-encoder reranking (Day 5) — same ONNX-based package, no new heavy dependency
 
 # --- Day 3: generation ---
 httpx==0.27.2                # used by Ollama client (runtime) and test client

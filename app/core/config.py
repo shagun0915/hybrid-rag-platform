@@ -36,6 +36,12 @@ class Settings(BaseSettings):
     rerank_top_n: int = 5
     rrf_k: int = 60  # Reciprocal Rank Fusion constant — see hybrid_search.py
 
+    # Agentic retrieval (Day 5) — the iteration cap is not optional to
+    # set; every agent loop needs one, or a persistently weak query would
+    # retry forever. See agentic_retrieval.py.
+    max_retrieval_attempts: int = 2
+    min_rerank_score: float = 0.5  # sigmoid-scaled, 0-1 — see reranker.py
+
     # LLM (Day 3+) — provider is swappable via LLM_PROVIDER.
     # "ollama" = free, local, runs on your machine, no API key needed.
     # "anthropic" = real Claude, requires ANTHROPIC_API_KEY + billing.

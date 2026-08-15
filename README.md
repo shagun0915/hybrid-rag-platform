@@ -156,13 +156,43 @@ carry rich semantic meaning the way a full sentence does. Keyword search
 catches exactly that case. Neither approach is strictly better — that's
 the whole justification for fusing both rather than picking one.
 
+## API — Day 5 changes
+
+`/query` is now genuinely agentic, not a fixed pipeline. Each request:
+
+1. Embeds the question, runs hybrid search (Day 4), then **reranks** the
+   candidates with a cross-encoder for a more precise top-N.
+2. Checks whether the top reranked result is confident enough
+   (`MIN_RERANK_SCORE`, default 0.5).
+3. If not, and attempts remain (`MAX_RETRIEVAL_ATTEMPTS`, default 2), the
+   LLM **reformulates the query** and the loop retries — this is the
+   agentic step: the system decides to retry based on its own previous
+   result, rather than following a fixed script.
+4. Stops either when confident, or when attempts are exhausted — **never
+   indefinitely**. This cap is not optional; every agent loop needs one.
+
+The `retrieval_debug.attempts` field in the response shows exactly what
+the system tried on each attempt (query used, candidates found, top
+score) — visible in the API response itself, not just server logs.
+
+```bash
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What was the Rank-1 accuracy in the fingerprint recognition research?"}'
+```
+
+Note: the per-request `top_k` override from Day 3/4 was dropped for now
+— retrieval width is controlled by `RETRIEVAL_TOP_K` / `RERANK_TOP_N` in
+`.env`. Could be reintroduced by threading it through `agentic_retrieve`;
+left out today to keep the loop's signature simple while it's new.
+
 ## Roadmap
 
 - [x] **Day 1** — Repo structure, FastAPI skeleton, Postgres+pgvector via Docker, health checks
 - [x] **Day 2** — Document ingestion: parsing (.txt/.md/.pdf), chunking, embeddings (fastembed/bge-small), storage in pgvector
 - [x] **Day 3** — Baseline RAG: pgvector cosine-similarity retrieval -> swappable Ollama/Claude generation -> grounded answer with sources
 - [x] **Day 4** — Hybrid retrieval: vector + Postgres full-text search, fused via Reciprocal Rank Fusion
-- [ ] **Day 5** — Cross-encoder reranking + agentic query reformulation
+- [x] **Day 5** — Cross-encoder reranking + agentic query reformulation with a hard iteration cap
 - [ ] **Day 6** — Evaluation: golden dataset, Recall@K, MRR, faithfulness
 - [ ] **Day 7** — Deployment, docs, architecture polish
 
