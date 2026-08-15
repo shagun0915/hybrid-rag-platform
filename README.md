@@ -27,6 +27,10 @@ engineering project rather than a demo:
   measured example of where pure semantic search falls short).
 - **Cross-encoder reranking** — a second, more precise scoring pass over
   the top candidates before they reach the LLM.
+- **Query expansion** — every attempt searches with the literal question
+  plus a couple of LLM-generated paraphrased variants, fused together,
+  so a chunk that loses under one phrasing gets another chance under
+  different wording.
 - **Agentic query reformulation** — if the top result isn't confident
   enough, the LLM rewrites the query and retries, capped at a hard
   maximum so a genuinely unanswerable question can't loop forever.
@@ -35,6 +39,9 @@ engineering project rather than a demo:
   abstention — not eyeballed spot checks.
 - **Swappable LLM provider** — Ollama (free, local) or Claude (cloud,
   paid) behind one interface, a one-line `.env` change to switch.
+- **A demo UI** at `/ui` — watch the actual retrieval trace (hybrid
+  search candidates, query variants, rerank scores, reformulation) as it
+  happens, not just read about it.
 
 ## Quick start
 
@@ -142,7 +149,8 @@ app/
                                   (swappable via chunking_strategy.py), embedder.py, pipeline.py
     retrieval/                    vector_search.py, keyword_search.py,
                                    hybrid_search.py, reranker.py,
-                                   query_reformulation.py, agentic_retrieval.py
+                                   query_reformulation.py, query_expansion.py,
+                                   expanded_search.py, agentic_retrieval.py
     generation/                    llm_client.py (Ollama/Anthropic dispatch), answer.py
     evaluation/                     golden_dataset.py, metrics.py, run_eval.py, reports/
 tests/                          Pure-logic unit tests, offline-runnable, one file per service
@@ -178,6 +186,8 @@ Every tunable lives in `.env` (copy from `.env.example`):
 | `RRF_K` | `60` | Reciprocal Rank Fusion constant (standard default) |
 | `MAX_RETRIEVAL_ATTEMPTS` | `2` | Hard cap on the agentic retry loop |
 | `MIN_RERANK_SCORE` | `0.5` | Confidence threshold that stops the retry loop early |
+| `QUERY_EXPANSION_ENABLED` | `true` | Search with paraphrased variants alongside the literal query |
+| `QUERY_EXPANSION_VARIANTS` | `2` | How many LLM-generated variants to search per attempt |
 
 ## Evaluation
 
@@ -283,11 +293,44 @@ It either found the right chunk and cited it, or found nothing and said
 so. That reliability — not the retrieval success rate — is the actual
 engineering property worth highlighting here.
 
-**Real fix for the still-open corpus-imbalance problem (v2, not built):**
-query expansion (searching with a few paraphrased variants per attempt,
-not just one) and/or per-document-type retrieval weighting, so a
-numerically small but relevant document class doesn't get systematically
-out-competed by a numerically larger one.
+**Fix, now built: query expansion.** Rather than searching with only the
+literal question, every attempt now searches with the question *plus*
+a couple of LLM-generated paraphrased variants (`query_expansion.py`),
+fusing every variant's results together via the same RRF used for
+vector+keyword fusion (`expanded_search.py`) — RRF applied one level up,
+reusing the existing function rather than writing new fusion logic.
+
+**Verified with a controlled simulation first, then confirmed live** on
+the VAMP case from the third case study below. Before expansion, the
+chunk containing the answer scored around `0.01`–`0.04` in fusion score
+and didn't reliably lead the candidate pool. After expansion — searching
+*"What is full form of VAMP"* alongside two generated variants — that
+same chunk led with `0.0492`, the top-ranked candidate by a clear
+margin. That's the retrieval-stage fix working exactly as designed, with
+real before/after numbers, not just a simulation.
+
+**But this also confirms the reranker weakness independently, not just
+theoretically.** Even leading retrieval, that chunk's *rerank* score was
+only `0.0276` — nowhere near the `0.5` confidence threshold. Query
+expansion fixed getting the right chunk into the race; it does nothing
+for the reranker's separate difficulty scoring a correct chunk highly
+once it's paraphrase-distant from the query. Two different bugs, two
+different layers, confirmed independently rather than assumed to be the
+same problem.
+
+**Toggleable, not forced** — `QUERY_EXPANSION_ENABLED` in `.env`, off
+falls back to the original single-query behavior. Visible live in the
+demo UI's retrieval trace: each attempt now shows every phrasing
+searched and how many candidates each one found before fusion, not just
+the final blended result.
+
+**Honest scope note — what this does and doesn't fix:** this targets the
+*retrieval-stage* corpus-imbalance problem (a relevant chunk never
+entering the candidate pool). It does not address the separate
+reranker-vocabulary-mismatch weakness from the original SonarQube
+finding above, or the generation-side precision/attribution weakness
+documented below — those are different layers of the pipeline with
+different causes, and query expansion alone doesn't touch either.
 
 ### Small local LLM shows real answer variance between identical runs
 
@@ -345,6 +388,42 @@ failure mode is a natural next test, not yet run here due to API
 billing constraints at the time — noted as an open question rather than
 silently skipped.
 
+### A fourth case: query reformulation guessed the wrong domain entirely
+
+Re-running the VAMP question with query expansion enabled surfaced a new
+failure mode, not the one being tested for. Attempt 1 (with expansion)
+correctly promoted the right chunk to the top of retrieval — confirming
+the fix above — but still scored below threshold on rerank, so attempt 2
+fired. The LLM's reformulated query: *"Define VAMP in medical
+terminology"*, which then expanded into variants **"Vascular Adhesion
+Molecule"** and **"Vascular Cell Adhesion Molecule"** — real biology
+terms, entirely unrelated to this corpus, which is about a Visa
+remediation portal.
+
+The reformulation step didn't just reword the question — it **guessed a
+specific, wrong domain** for an ambiguous acronym and searched for that
+guess instead of a paraphrase of what was actually asked. Attempt 2's
+top score dropped to `0.0031`, worse than attempt 1. The system still
+correctly refused to hallucinate an answer from that irrelevant
+context — grounding held once again — but a real opportunity was lost:
+attempt 1's retrieval had already found the right chunk, and
+reformulation searched *away* from it instead of refining around it.
+
+**Root cause:** `reformulate_query()` (`query_reformulation.py`) asks
+the LLM to produce a better search query with no visibility into what's
+actually in the corpus — so for a generic acronym like "VAMP," it falls
+back on the model's own general-knowledge guess about what the acronym
+*probably* means, which has nothing to do with what's actually been
+uploaded.
+
+**Real fix (v2, not built):** ground the reformulation prompt in the
+corpus itself — e.g., include a few high-scoring terms or filenames
+from attempt 1's own candidates as context, so reformulation refines
+around what's actually present rather than guessing a domain from
+scratch. A smaller, more contained fix than it sounds: the data needed
+(attempt 1's candidates) already exists in the loop, it just isn't
+currently passed to `reformulate_query()`.
+
 ### Other documented tradeoffs (noted inline in code)
 
 - Lexical search is Postgres full-text search, not literal BM25 — a
@@ -396,13 +475,15 @@ moving to the next:
 - **v2 follow-up (candidate-pool visibility + honest re-diagnosis)** — Re-tested the fix against the real system rather than assuming it worked; found the same query still initially failed for a *different* reason (corpus imbalance at the hybrid-search stage, not chunking). Added `pre_rerank_candidates` logging to distinguish "never retrieved" from "retrieved but reranked out." Discovered the Day 5 agentic retry loop — not the chunking fix — was what actually recovered a correct answer. See Known Limitations for the full trace.
 - **v2 follow-up (demo UI)** — Added a frontend at `/ui`, served directly by the same FastAPI app (no separate service, no CORS to configure). Signature feature is a live retrieval-trace visualization — candidate score bars, confidence tags, and the reformulation step rendered visibly — rather than a generic chat window, so the agentic retry loop is something you can watch happen, not just read about.
 - **v2 follow-up (third case study — generation-side failure)** — Using the demo UI on a newly uploaded document, found a case where the system incorrectly denied knowing an answer. Initial hypothesis (same retrieval-miss pattern as the SonarQube case) was checked against real chunk data and found to be **wrong** — retrieval had actually worked correctly. Isolated the real cause via a direct, RAG-pipeline-free test against Ollama: a precision/attribution weakness in the free local model, made measurably worse by the production prompt's added structure. See Known Limitations for the full trace.
+- **v2 follow-up (query expansion)** — Built the fix documented for the corpus-imbalance limitation: every retrieval attempt now searches with the literal question plus a couple of LLM-generated paraphrased variants, fused together via the existing RRF logic (reused, not rewritten). Verified the core mechanism with a controlled simulation — a chunk absent from the literal query's own results still surfaced at rank 2 of 4 after fusion, given real, checkable numbers. Wired into the demo UI's retrieval trace so every phrasing searched is visible live, not just described.
+- **v2 follow-up (fourth case study — reformulation guessing wrong domains)** — Re-tested the VAMP case live with query expansion enabled. Confirmed the fix worked at the retrieval stage (the right chunk moved from a weak, unreliable score to the top of the candidate pool) and independently confirmed the reranker weakness (still scored below threshold despite leading retrieval). Also surfaced a new failure mode along the way: query reformulation guessed a specific, wrong domain for an ambiguous acronym ("VAMP" → biology terms) instead of refining the actual question, making the retry worse than the original attempt. Grounding still held — no hallucinated answer — but a real opportunity was lost. Root-caused to `reformulate_query()` having no visibility into the corpus it's supposedly helping search.
 
 ## v2 roadmap (deferred, not built)
 
 Multimodal document processing (OCR, tables), claim-level citation
 verification, confidence-aware human review queue, full
 observability/tracing integration, LLM-as-judge faithfulness scoring,
-query expansion.
+per-document-type retrieval weighting.
 
 ## License
 
