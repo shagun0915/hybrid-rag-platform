@@ -206,7 +206,7 @@ code changes.
 Found by actually running the system and evaluation suite, not predicted
 in advance.
 
-### Retrieval is strong on literal terms, measurably weaker on paraphrases — and here's exactly why, traced through two fixes
+### Retrieval is strong on literal terms, measurably weaker on paraphrases — traced across two real runs
 
 **The original finding (Day 6):** asking **"SonarQube"** directly
 retrieves the correct chunk with a cross-encoder rerank score of **0.98**
@@ -257,6 +257,32 @@ tools used for remediation were Checkmarx and SonarQube."*
   ranking among candidates still worked. Low confidence didn't mean
   wrong here, just honestly uncertain.
 
+**Second data point — the same question, run again later, where the
+retry does NOT rescue it:** the exact same paraphrased question, tested
+again via the demo UI's retrieval trace, produced a different outcome.
+Attempt 1 scored `0.0015` (below threshold, resume chunk never in the
+candidate pool). The agentic reformulation this time produced *"What
+security tools were used to remediate vulnerabilities in a recent
+cybersecurity incident"* — a wording that drifted further from the
+actual content, not closer — and attempt 2 scored even lower, `0.0004`.
+The resume chunk containing "SonarQube" never entered either attempt's
+candidate pool.
+
+The system's response: *"There is no mention of security tools used for
+remediation in the provided context."* — a correct abstention, not a
+hallucination. Even with retrieval genuinely failing on both attempts,
+grounding held: the model didn't reach for "SonarQube" from its own
+training data despite obviously knowing what it is.
+
+**What these two runs together actually show:** the agentic retry loop
+is not a reliable fix for corpus-imbalance — sometimes a different
+phrasing surfaces the right chunk, sometimes it drifts further away, and
+which one happens isn't controllable with the current design. What *is*
+reliable, across both outcomes: the system never answered incorrectly.
+It either found the right chunk and cited it, or found nothing and said
+so. That reliability — not the retrieval success rate — is the actual
+engineering property worth highlighting here.
+
 **Real fix for the still-open corpus-imbalance problem (v2, not built):**
 query expansion (searching with a few paraphrased variants per attempt,
 not just one) and/or per-document-type retrieval weighting, so a
@@ -272,6 +298,52 @@ changing, but from Ollama's `llama3.1:8b` phrasing answers differently
 run to run given weakly-ranked context. A genuine tradeoff of the
 free/local provider path; a larger model would likely show less
 variance on the same borderline evidence (not directly A/B tested here).
+
+### A third case: retrieval worked correctly, but the model still couldn't answer confidently
+
+Uploading a new, unrelated document (an internal design doc mentioning
+"VAMP," an acronym) and asking *"What is full form of VAMP?"* produced a
+flat denial: *"The full form of VAMP is not mentioned in the provided
+context excerpts."* The first hypothesis — that this was the same
+corpus-imbalance retrieval miss as the SonarQube case — turned out to be
+**wrong**, and checking it properly is itself worth documenting.
+
+**What actually happened, verified against the real chunk data** (via
+`GET /documents/{id}/chunks`, cross-checked against the source
+document): the chunk containing the definition — *"The ERP VAMP (Visa
+Acquirer Monitoring Program) Remediation Portal requires..."* — was
+**not** missing from the candidate pool. It was chunk 0, the single
+highest-scored retrieved result (`0.1241`), sitting in plain prose in
+the middle of that chunk's content. Retrieval, chunking, and reranking
+all did their job correctly this time.
+
+**To isolate the real cause, the same chunk and question were tested
+directly against Ollama, completely outside the RAG pipeline** — no
+competing excerpts, no citation-format system prompt, just the one
+chunk and one question piped straight into `ollama run llama3.1:8b`.
+The result: the model *did* locate the correct phrase, but hedged
+instead of committing to it — *"the full form of VAMP is not explicitly
+mentioned... however, it appears to be related to the Visa Acquirer
+Monitoring Program"* — and misattributed where it came from, claiming
+it was "indicated in the document title" (the title never contains that
+phrase; it's in the Overview paragraph). The model found the fact and
+still couldn't cite it precisely.
+
+**And the isolated test's hedged-but-partially-correct answer was
+still better than the real system's flat denial.** The production
+prompt — five "Excerpt N" blocks plus citation-format instructions —
+appears to make this specific weakness *worse* for a model this size,
+not better. Added structure pushed the model toward a confident wrong
+answer instead of the tentative right one it gave with a simpler prompt.
+
+**The honest conclusion:** this is a generation-side precision and
+attribution weakness in the free local model, not a retrieval bug —
+three separate, verified layers of evidence (chunk data, isolated model
+test, prompt-complexity comparison), not a guess. Confirming whether a
+larger model (Claude, via `LLM_PROVIDER=anthropic`) avoids this specific
+failure mode is a natural next test, not yet run here due to API
+billing constraints at the time — noted as an open question rather than
+silently skipped.
 
 ### Other documented tradeoffs (noted inline in code)
 
@@ -323,6 +395,7 @@ moving to the next:
 - **v2 follow-up (semantic chunking)** — Replaced fixed word-count chunking with embedding-similarity-based sentence grouping, fixing the fact/context-separation cause of the SonarQube limitation. Swappable via `CHUNKING_STRATEGY`, not a forced rewrite.
 - **v2 follow-up (candidate-pool visibility + honest re-diagnosis)** — Re-tested the fix against the real system rather than assuming it worked; found the same query still initially failed for a *different* reason (corpus imbalance at the hybrid-search stage, not chunking). Added `pre_rerank_candidates` logging to distinguish "never retrieved" from "retrieved but reranked out." Discovered the Day 5 agentic retry loop — not the chunking fix — was what actually recovered a correct answer. See Known Limitations for the full trace.
 - **v2 follow-up (demo UI)** — Added a frontend at `/ui`, served directly by the same FastAPI app (no separate service, no CORS to configure). Signature feature is a live retrieval-trace visualization — candidate score bars, confidence tags, and the reformulation step rendered visibly — rather than a generic chat window, so the agentic retry loop is something you can watch happen, not just read about.
+- **v2 follow-up (third case study — generation-side failure)** — Using the demo UI on a newly uploaded document, found a case where the system incorrectly denied knowing an answer. Initial hypothesis (same retrieval-miss pattern as the SonarQube case) was checked against real chunk data and found to be **wrong** — retrieval had actually worked correctly. Isolated the real cause via a direct, RAG-pipeline-free test against Ollama: a precision/attribution weakness in the free local model, made measurably worse by the production prompt's added structure. See Known Limitations for the full trace.
 
 ## v2 roadmap (deferred, not built)
 
