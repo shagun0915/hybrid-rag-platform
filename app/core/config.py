@@ -52,8 +52,21 @@ class Settings(BaseSettings):
     max_retrieval_attempts: int = 2
     min_rerank_score: float = 0.5  # sigmoid-scaled, 0-1 — see reranker.py
 
+    # Query expansion (v2 follow-up) — the fix documented in the README's
+    # Known Limitations for the corpus-imbalance problem: search with a
+    # few paraphrased variants per attempt, not just the literal query,
+    # so a numerically small but relevant document class isn't
+    # systematically out-competed by a larger one under one fixed
+    # phrasing. Proactive (every attempt), unlike Day 5's reformulation
+    # (reactive, only after a failed attempt) — see query_expansion.py.
+    query_expansion_enabled: bool = True
+    query_expansion_variants: int = 2
+
     # LLM (Day 3+) — provider is swappable via LLM_PROVIDER.
     # "ollama" = free, local, runs on your machine, no API key needed.
+    # "groq" = free, cloud, no local compute needed — the right choice
+    #          for a public deployment where Ollama can't run (see
+    #          README Deployment section).
     # "anthropic" = real Claude, requires ANTHROPIC_API_KEY + billing.
     llm_provider: str = "ollama"
     llm_max_tokens: int = 1024
@@ -61,6 +74,10 @@ class Settings(BaseSettings):
     # Ollama (local, free)
     ollama_base_url: str = "http://host.docker.internal:11434"
     ollama_model: str = "llama3.1:8b"
+
+    # Groq (cloud, free — no credit card required)
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
 
     # Anthropic (cloud, paid)
     anthropic_api_key: str = ""

@@ -227,6 +227,31 @@
   .conf-tag.yes{ background: var(--teal-soft); color: var(--teal); }
   .conf-tag.no{ background: var(--amber-soft); color: var(--amber); }
 
+  .variant-block{
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--paper);
+    border-radius: 6px;
+  }
+  .variant-label{
+    font-family: var(--mono); font-size: 10.5px; text-transform:uppercase; letter-spacing:0.04em;
+    color: var(--ink-faint);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .variant-row{
+    display:grid;
+    grid-template-columns: 56px 1fr 90px;
+    gap: 8px;
+    align-items:center;
+    padding: 3px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .variant-num{ color: var(--teal); text-transform:uppercase; font-size: 10px; }
+  .variant-text{ color: var(--ink-soft); font-style: italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .variant-count{ color: var(--ink-faint); text-align:right; }
+
   .cand-list{ margin-top: 10px; }
   .cand-row{
     display:grid;
@@ -460,6 +485,8 @@
       const confident = score !== null && score >= CONFIDENCE_THRESHOLD;
       const candidates = a.pre_rerank_candidates || [];
       const maxScore = Math.max(...candidates.map(c => c.fusion_score || 0), 0.0001);
+      const variants = a.query_variants || [];
+      const perVariant = a.per_variant_results || [];
 
       html += `<div class="trace-attempt">
         <div class="trace-head">
@@ -472,6 +499,20 @@
             <span class="conf-tag ${confident ? 'yes' : 'no'}">${confident ? 'confident' : 'below threshold'}</span>
           </div>
         </div>
+        ${variants.length > 1 ? `
+          <div class="variant-block">
+            <span class="variant-label">Searched ${variants.length} phrasings, fused together</span>
+            <div class="variant-list">
+              ${perVariant.map((v, vi) => `
+                <div class="variant-row">
+                  <span class="variant-num">${vi === 0 ? 'original' : 'variant'}</span>
+                  <span class="variant-text">"${escapeHtml(v.query)}"</span>
+                  <span class="variant-count">${v.candidates_found} candidates</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
         <div class="cand-list">
           ${candidates.slice(0, 6).map(c => `
             <div class="cand-row">

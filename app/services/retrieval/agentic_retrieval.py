@@ -2,13 +2,16 @@
 The agentic retrieval loop.
 
 Flow, per attempt:
-  1. Embed the current query (original, or a reformulated one from a
-     previous attempt).
-  2. hybrid_search (Day 4) for candidates.
-  3. rerank (this file's sibling, reranker.py) to get a precise top-N.
-  4. Check whether the best reranked result is confident enough.
+  1. Query expansion (v2 follow-up): search with the current query PLUS
+     a couple of LLM-generated paraphrased variants, fused together —
+     not just the one literal phrasing. See expanded_search.py.
+  2. rerank (Day 5) to get a precise top-N from the expanded candidate pool.
+  3. Check whether the best reranked result is confident enough.
      - Yes -> stop, return these results.
-     - No, and attempts remain -> reformulate the query, try again.
+     - No, and attempts remain -> reformulate the query, try again
+       (this new reformulated query also gets expanded on the next
+       attempt — expansion and reformulation compose, they aren't
+       alternatives to each other).
      - No, and attempts exhausted -> stop anyway, return what we have.
 
 The critical safety property: this loop CANNOT run forever. Every
@@ -22,12 +25,12 @@ Every attempt is logged and returned alongside the final chunks — not
 just written to server logs — so both the API caller and a human
 debugging a specific query can see exactly what the system tried, in
 what order, and why it stopped. This is deliberately visible, not hidden
-behind a "trust the black box" response.
+behind a "trust the black box" response — and now, via the demo UI, it's
+visible as a live rendering, not just raw JSON.
 """
 
 from app.core.config import settings
-from app.services.ingestion.embedder import embed_texts
-from app.services.retrieval.hybrid_search import hybrid_search
+from app.services.retrieval.expanded_search import expanded_hybrid_search
 from app.services.retrieval.reranker import rerank
 from app.services.retrieval.query_reformulation import reformulate_query
 
@@ -68,10 +71,10 @@ async def agentic_retrieve(db, question: str) -> dict:
     attempts_log: list[dict] = []
 
     for attempt in range(1, settings.max_retrieval_attempts + 1):
-        [query_vector] = await embed_texts([current_query])
-        candidates = await hybrid_search(
-            db, current_query, query_vector, top_k=settings.retrieval_top_k
+        expansion_result = await expanded_hybrid_search(
+            db, current_query, top_k=settings.retrieval_top_k
         )
+        candidates = expansion_result["candidates"]
         reranked = await rerank(current_query, candidates, top_n=settings.rerank_top_n)
 
         top_score = reranked[0]["rerank_score"] if reranked else None
@@ -84,6 +87,12 @@ async def agentic_retrieve(db, question: str) -> dict:
                 # Pre-rerank pool — lets you distinguish "never retrieved
                 # by hybrid search" from "retrieved but reranked out."
                 "pre_rerank_candidates": _summarize_candidates(candidates),
+                # Every phrasing actually searched this attempt (original
+                # + expansion variants) and how many candidates each
+                # contributed before fusion — visible in the demo UI's
+                # retrieval trace, not just in server logs.
+                "query_variants": expansion_result["queries_used"],
+                "per_variant_results": expansion_result["per_variant"],
             }
         )
 

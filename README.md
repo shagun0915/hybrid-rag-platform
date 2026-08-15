@@ -27,6 +27,10 @@ engineering project rather than a demo:
   measured example of where pure semantic search falls short).
 - **Cross-encoder reranking** — a second, more precise scoring pass over
   the top candidates before they reach the LLM.
+- **Query expansion** — every attempt searches with the literal question
+  plus a couple of LLM-generated paraphrased variants, fused together,
+  so a chunk that loses under one phrasing gets another chance under
+  different wording.
 - **Agentic query reformulation** — if the top result isn't confident
   enough, the LLM rewrites the query and retries, capped at a hard
   maximum so a genuinely unanswerable question can't loop forever.
@@ -35,6 +39,9 @@ engineering project rather than a demo:
   abstention — not eyeballed spot checks.
 - **Swappable LLM provider** — Ollama (free, local) or Claude (cloud,
   paid) behind one interface, a one-line `.env` change to switch.
+- **A demo UI** at `/ui` — watch the actual retrieval trace (hybrid
+  search candidates, query variants, rerank scores, reformulation) as it
+  happens, not just read about it.
 
 ## Quick start
 
@@ -142,7 +149,8 @@ app/
                                   (swappable via chunking_strategy.py), embedder.py, pipeline.py
     retrieval/                    vector_search.py, keyword_search.py,
                                    hybrid_search.py, reranker.py,
-                                   query_reformulation.py, agentic_retrieval.py
+                                   query_reformulation.py, query_expansion.py,
+                                   expanded_search.py, agentic_retrieval.py
     generation/                    llm_client.py (Ollama/Anthropic dispatch), answer.py
     evaluation/                     golden_dataset.py, metrics.py, run_eval.py, reports/
 tests/                          Pure-logic unit tests, offline-runnable, one file per service
@@ -165,8 +173,9 @@ Every tunable lives in `.env` (copy from `.env.example`):
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `LLM_PROVIDER` | `ollama` | `ollama` (free/local) or `anthropic` (paid/cloud) |
+| `LLM_PROVIDER` | `ollama` | `ollama` (free/local), `groq` (free/cloud), or `anthropic` (paid/cloud) |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Local model, if using Ollama |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Cloud model, if using Groq — free, no credit card |
 | `ANTHROPIC_MODEL` | `claude-sonnet-5` | Cloud model, if using Anthropic |
 | `EMBEDDING_DIMENSION` | `384` | Must match the embedding model's actual output size |
 | `CHUNKING_STRATEGY` | `semantic` | `semantic` (sentence-similarity based) or `fixed` (word-count based) |
@@ -178,6 +187,8 @@ Every tunable lives in `.env` (copy from `.env.example`):
 | `RRF_K` | `60` | Reciprocal Rank Fusion constant (standard default) |
 | `MAX_RETRIEVAL_ATTEMPTS` | `2` | Hard cap on the agentic retry loop |
 | `MIN_RERANK_SCORE` | `0.5` | Confidence threshold that stops the retry loop early |
+| `QUERY_EXPANSION_ENABLED` | `true` | Search with paraphrased variants alongside the literal query |
+| `QUERY_EXPANSION_VARIANTS` | `2` | How many LLM-generated variants to search per attempt |
 
 ## Evaluation
 
@@ -206,7 +217,7 @@ code changes.
 Found by actually running the system and evaluation suite, not predicted
 in advance.
 
-### Retrieval is strong on literal terms, measurably weaker on paraphrases — and here's exactly why, traced through two fixes
+### Retrieval is strong on literal terms, measurably weaker on paraphrases — traced across two real runs
 
 **The original finding (Day 6):** asking **"SonarQube"** directly
 retrieves the correct chunk with a cross-encoder rerank score of **0.98**
@@ -257,11 +268,70 @@ tools used for remediation were Checkmarx and SonarQube."*
   ranking among candidates still worked. Low confidence didn't mean
   wrong here, just honestly uncertain.
 
-**Real fix for the still-open corpus-imbalance problem (v2, not built):**
-query expansion (searching with a few paraphrased variants per attempt,
-not just one) and/or per-document-type retrieval weighting, so a
-numerically small but relevant document class doesn't get systematically
-out-competed by a numerically larger one.
+**Second data point — the same question, run again later, where the
+retry does NOT rescue it:** the exact same paraphrased question, tested
+again via the demo UI's retrieval trace, produced a different outcome.
+Attempt 1 scored `0.0015` (below threshold, resume chunk never in the
+candidate pool). The agentic reformulation this time produced *"What
+security tools were used to remediate vulnerabilities in a recent
+cybersecurity incident"* — a wording that drifted further from the
+actual content, not closer — and attempt 2 scored even lower, `0.0004`.
+The resume chunk containing "SonarQube" never entered either attempt's
+candidate pool.
+
+The system's response: *"There is no mention of security tools used for
+remediation in the provided context."* — a correct abstention, not a
+hallucination. Even with retrieval genuinely failing on both attempts,
+grounding held: the model didn't reach for "SonarQube" from its own
+training data despite obviously knowing what it is.
+
+**What these two runs together actually show:** the agentic retry loop
+is not a reliable fix for corpus-imbalance — sometimes a different
+phrasing surfaces the right chunk, sometimes it drifts further away, and
+which one happens isn't controllable with the current design. What *is*
+reliable, across both outcomes: the system never answered incorrectly.
+It either found the right chunk and cited it, or found nothing and said
+so. That reliability — not the retrieval success rate — is the actual
+engineering property worth highlighting here.
+
+**Fix, now built: query expansion.** Rather than searching with only the
+literal question, every attempt now searches with the question *plus*
+a couple of LLM-generated paraphrased variants (`query_expansion.py`),
+fusing every variant's results together via the same RRF used for
+vector+keyword fusion (`expanded_search.py`) — RRF applied one level up,
+reusing the existing function rather than writing new fusion logic.
+
+**Verified with a controlled simulation first, then confirmed live** on
+the VAMP case from the third case study below. Before expansion, the
+chunk containing the answer scored around `0.01`–`0.04` in fusion score
+and didn't reliably lead the candidate pool. After expansion — searching
+*"What is full form of VAMP"* alongside two generated variants — that
+same chunk led with `0.0492`, the top-ranked candidate by a clear
+margin. That's the retrieval-stage fix working exactly as designed, with
+real before/after numbers, not just a simulation.
+
+**But this also confirms the reranker weakness independently, not just
+theoretically.** Even leading retrieval, that chunk's *rerank* score was
+only `0.0276` — nowhere near the `0.5` confidence threshold. Query
+expansion fixed getting the right chunk into the race; it does nothing
+for the reranker's separate difficulty scoring a correct chunk highly
+once it's paraphrase-distant from the query. Two different bugs, two
+different layers, confirmed independently rather than assumed to be the
+same problem.
+
+**Toggleable, not forced** — `QUERY_EXPANSION_ENABLED` in `.env`, off
+falls back to the original single-query behavior. Visible live in the
+demo UI's retrieval trace: each attempt now shows every phrasing
+searched and how many candidates each one found before fusion, not just
+the final blended result.
+
+**Honest scope note — what this does and doesn't fix:** this targets the
+*retrieval-stage* corpus-imbalance problem (a relevant chunk never
+entering the candidate pool). It does not address the separate
+reranker-vocabulary-mismatch weakness from the original SonarQube
+finding above, or the generation-side precision/attribution weakness
+documented below — those are different layers of the pipeline with
+different causes, and query expansion alone doesn't touch either.
 
 ### Small local LLM shows real answer variance between identical runs
 
@@ -272,6 +342,88 @@ changing, but from Ollama's `llama3.1:8b` phrasing answers differently
 run to run given weakly-ranked context. A genuine tradeoff of the
 free/local provider path; a larger model would likely show less
 variance on the same borderline evidence (not directly A/B tested here).
+
+### A third case: retrieval worked correctly, but the model still couldn't answer confidently
+
+Uploading a new, unrelated document (an internal design doc mentioning
+"VAMP," an acronym) and asking *"What is full form of VAMP?"* produced a
+flat denial: *"The full form of VAMP is not mentioned in the provided
+context excerpts."* The first hypothesis — that this was the same
+corpus-imbalance retrieval miss as the SonarQube case — turned out to be
+**wrong**, and checking it properly is itself worth documenting.
+
+**What actually happened, verified against the real chunk data** (via
+`GET /documents/{id}/chunks`, cross-checked against the source
+document): the chunk containing the definition — *"The ERP VAMP (Visa
+Acquirer Monitoring Program) Remediation Portal requires..."* — was
+**not** missing from the candidate pool. It was chunk 0, the single
+highest-scored retrieved result (`0.1241`), sitting in plain prose in
+the middle of that chunk's content. Retrieval, chunking, and reranking
+all did their job correctly this time.
+
+**To isolate the real cause, the same chunk and question were tested
+directly against Ollama, completely outside the RAG pipeline** — no
+competing excerpts, no citation-format system prompt, just the one
+chunk and one question piped straight into `ollama run llama3.1:8b`.
+The result: the model *did* locate the correct phrase, but hedged
+instead of committing to it — *"the full form of VAMP is not explicitly
+mentioned... however, it appears to be related to the Visa Acquirer
+Monitoring Program"* — and misattributed where it came from, claiming
+it was "indicated in the document title" (the title never contains that
+phrase; it's in the Overview paragraph). The model found the fact and
+still couldn't cite it precisely.
+
+**And the isolated test's hedged-but-partially-correct answer was
+still better than the real system's flat denial.** The production
+prompt — five "Excerpt N" blocks plus citation-format instructions —
+appears to make this specific weakness *worse* for a model this size,
+not better. Added structure pushed the model toward a confident wrong
+answer instead of the tentative right one it gave with a simpler prompt.
+
+**The honest conclusion:** this is a generation-side precision and
+attribution weakness in the free local model, not a retrieval bug —
+three separate, verified layers of evidence (chunk data, isolated model
+test, prompt-complexity comparison), not a guess. Confirming whether a
+larger model (Claude, via `LLM_PROVIDER=anthropic`) avoids this specific
+failure mode is a natural next test, not yet run here due to API
+billing constraints at the time — noted as an open question rather than
+silently skipped.
+
+### A fourth case: query reformulation guessed the wrong domain entirely
+
+Re-running the VAMP question with query expansion enabled surfaced a new
+failure mode, not the one being tested for. Attempt 1 (with expansion)
+correctly promoted the right chunk to the top of retrieval — confirming
+the fix above — but still scored below threshold on rerank, so attempt 2
+fired. The LLM's reformulated query: *"Define VAMP in medical
+terminology"*, which then expanded into variants **"Vascular Adhesion
+Molecule"** and **"Vascular Cell Adhesion Molecule"** — real biology
+terms, entirely unrelated to this corpus, which is about a Visa
+remediation portal.
+
+The reformulation step didn't just reword the question — it **guessed a
+specific, wrong domain** for an ambiguous acronym and searched for that
+guess instead of a paraphrase of what was actually asked. Attempt 2's
+top score dropped to `0.0031`, worse than attempt 1. The system still
+correctly refused to hallucinate an answer from that irrelevant
+context — grounding held once again — but a real opportunity was lost:
+attempt 1's retrieval had already found the right chunk, and
+reformulation searched *away* from it instead of refining around it.
+
+**Root cause:** `reformulate_query()` (`query_reformulation.py`) asks
+the LLM to produce a better search query with no visibility into what's
+actually in the corpus — so for a generic acronym like "VAMP," it falls
+back on the model's own general-knowledge guess about what the acronym
+*probably* means, which has nothing to do with what's actually been
+uploaded.
+
+**Real fix (v2, not built):** ground the reformulation prompt in the
+corpus itself — e.g., include a few high-scoring terms or filenames
+from attempt 1's own candidates as context, so reformulation refines
+around what's actually present rather than guessing a domain from
+scratch. A smaller, more contained fix than it sounds: the data needed
+(attempt 1's candidates) already exists in the loop, it just isn't
+currently passed to `reformulate_query()`.
 
 ### Other documented tradeoffs (noted inline in code)
 
@@ -289,24 +441,86 @@ variance on the same borderline evidence (not directly A/B tested here).
 
 ## Deployment
 
-This runs as a local Docker Compose stack by design — that's honest
-about what was actually built and verified this week, rather than
-claiming a live public deployment that wasn't. For a public-facing demo:
+**Recommended host: [Koyeb](https://koyeb.com)** — a genuinely free tier
+(no credit card, doesn't expire) that hosts both a Docker web service
+*and* a managed Postgres database with pgvector support, on a single
+platform. No splitting your stack across two providers.
 
-- **LLM provider:** switch `LLM_PROVIDER=anthropic` — Ollama isn't
-  practical on most free cloud tiers (no GPU, limited RAM), while
-  Anthropic's API works from anywhere with a key.
-- **Host options that support multi-container Docker Compose-style
-  deploys with a Postgres add-on:** Railway, Render, or Fly.io all have
-  free/cheap tiers suitable for a portfolio-scale project like this —
-  each needs a real account and a bit of platform-specific config
-  (mainly: point `DATABASE_URL` at their managed Postgres, ensure the
-  `vector` extension is enabled there, and set `ANTHROPIC_API_KEY`).
-- **Simpler alternative:** keep this as a local-only project and record
-  a short demo (screen capture of the `/docs` UI or a few `curl`
-  examples) for your portfolio — genuinely sufficient for demonstrating
-  the engineering to a recruiter or interviewer without the added
-  surface area of managing a live public deployment.
+**LLM provider for the public deployment: `LLM_PROVIDER=groq`.** Ollama
+can't run on a 512MB free instance (an 8B-parameter model needs several
+GB of RAM). Anthropic works but requires paid credits. Groq is free
+(no credit card, not a trial) and OpenAI-compatible — get a key at
+[console.groq.com/keys](https://console.groq.com/keys).
+
+**Honest resource caveat:** the free tier gives 0.1 vCPU / 512MB RAM —
+meaningfully less than local dev. `fastembed`'s embedding model and the
+cross-encoder reranker both load into memory; this may run fine, or may
+be genuinely too tight. Not verified end-to-end at time of writing —
+stated plainly rather than promised.
+
+### Steps
+
+1. **Push this repo to GitHub** if it isn't already (Koyeb deploys from
+   a Git repo or a container registry).
+
+2. **Create a Koyeb account** at [koyeb.com](https://koyeb.com) — email
+   or GitHub login, no card required.
+
+3. **Provision the database first.** In the Koyeb dashboard, create a
+   PostgreSQL database instance. Once it's up, note the connection
+   string — you'll set this as `DATABASE_URL` on the API service. The
+   app enables the `vector` extension itself at startup
+   (`CREATE EXTENSION IF NOT EXISTS vector` in `database.py`) — no
+   manual SQL needed, assuming the extension is available on Koyeb's
+   Postgres (documented as supporting 40+ extensions including pgvector
+   at time of writing — worth confirming against their current docs
+   before relying on it).
+
+4. **Create the web service** from this GitHub repo, choosing Dockerfile
+   build (not buildpack — this project has one already). Set the
+   exposed port to `8000` to match the Dockerfile.
+
+5. **Set environment variables** on the service (same names as
+   `.env.example`):
+   ```
+   DATABASE_URL=<the connection string from step 3>
+   LLM_PROVIDER=groq
+   GROQ_API_KEY=<your free key from console.groq.com/keys>
+   GROQ_MODEL=llama-3.3-70b-versatile
+   CHUNKING_STRATEGY=semantic
+   ```
+   (Retrieval/reranking/expansion settings can be left at their
+   `config.py` defaults unless you want to tune them.)
+
+6. **Deploy.** Koyeb builds the Dockerfile and gives you a live URL
+   ending in `.koyeb.app`.
+
+7. **Verify it's actually working**, don't just assume:
+   ```bash
+   curl https://<your-app>.koyeb.app/health/ready
+   ```
+   Looking for `{"status":"ok","database":"connected"}`. Then open
+   `https://<your-app>.koyeb.app/ui` — same demo interface as local,
+   now with a shareable public link.
+
+8. **Re-upload your documents** — the deployed database starts empty;
+   local uploads don't transfer automatically.
+
+### If resource limits turn out to be too tight
+
+If the free instance struggles (slow responses, timeouts, out-of-memory
+errors) — a real possibility at 512MB, not hidden here — two honest
+options: upgrade to Koyeb's smallest paid tier (usually a few dollars/
+month), or fall back to the simpler alternative below.
+
+### Simpler alternative
+
+Keep this as a local-only project and record a short demo (screen
+capture of `/ui` showing the retrieval trace live, or a walkthrough of
+the `/docs` API explorer) for your portfolio. Genuinely sufficient for
+demonstrating the engineering to a recruiter or interviewer — the
+retrieval trace UI was built specifically to make this compelling
+without needing a live public deployment.
 
 ## Build journal
 
@@ -323,13 +537,17 @@ moving to the next:
 - **v2 follow-up (semantic chunking)** — Replaced fixed word-count chunking with embedding-similarity-based sentence grouping, fixing the fact/context-separation cause of the SonarQube limitation. Swappable via `CHUNKING_STRATEGY`, not a forced rewrite.
 - **v2 follow-up (candidate-pool visibility + honest re-diagnosis)** — Re-tested the fix against the real system rather than assuming it worked; found the same query still initially failed for a *different* reason (corpus imbalance at the hybrid-search stage, not chunking). Added `pre_rerank_candidates` logging to distinguish "never retrieved" from "retrieved but reranked out." Discovered the Day 5 agentic retry loop — not the chunking fix — was what actually recovered a correct answer. See Known Limitations for the full trace.
 - **v2 follow-up (demo UI)** — Added a frontend at `/ui`, served directly by the same FastAPI app (no separate service, no CORS to configure). Signature feature is a live retrieval-trace visualization — candidate score bars, confidence tags, and the reformulation step rendered visibly — rather than a generic chat window, so the agentic retry loop is something you can watch happen, not just read about.
+- **v2 follow-up (third case study — generation-side failure)** — Using the demo UI on a newly uploaded document, found a case where the system incorrectly denied knowing an answer. Initial hypothesis (same retrieval-miss pattern as the SonarQube case) was checked against real chunk data and found to be **wrong** — retrieval had actually worked correctly. Isolated the real cause via a direct, RAG-pipeline-free test against Ollama: a precision/attribution weakness in the free local model, made measurably worse by the production prompt's added structure. See Known Limitations for the full trace.
+- **v2 follow-up (query expansion)** — Built the fix documented for the corpus-imbalance limitation: every retrieval attempt now searches with the literal question plus a couple of LLM-generated paraphrased variants, fused together via the existing RRF logic (reused, not rewritten). Verified the core mechanism with a controlled simulation — a chunk absent from the literal query's own results still surfaced at rank 2 of 4 after fusion, given real, checkable numbers. Wired into the demo UI's retrieval trace so every phrasing searched is visible live, not just described.
+- **v2 follow-up (fourth case study — reformulation guessing wrong domains)** — Re-tested the VAMP case live with query expansion enabled. Confirmed the fix worked at the retrieval stage (the right chunk moved from a weak, unreliable score to the top of the candidate pool) and independently confirmed the reranker weakness (still scored below threshold despite leading retrieval). Also surfaced a new failure mode along the way: query reformulation guessed a specific, wrong domain for an ambiguous acronym ("VAMP" → biology terms) instead of refining the actual question, making the retry worse than the original attempt. Grounding still held — no hallucinated answer — but a real opportunity was lost. Root-caused to `reformulate_query()` having no visibility into the corpus it's supposedly helping search.
+- **v2 follow-up (Groq provider + deployment guide)** — Added Groq as a third LLM provider (free, cloud, no credit card, OpenAI-compatible — same `httpx` pattern as the Ollama integration, no new SDK dependency) specifically to make a public deployment possible without needing paid Anthropic credits. Wrote concrete deployment steps for Koyeb (free Docker + Postgres/pgvector hosting on one platform), stated honestly where the free tier's resource limits are unverified rather than promising it'll definitely work.
 
 ## v2 roadmap (deferred, not built)
 
 Multimodal document processing (OCR, tables), claim-level citation
 verification, confidence-aware human review queue, full
 observability/tracing integration, LLM-as-judge faithfulness scoring,
-query expansion.
+per-document-type retrieval weighting.
 
 ## License
 
