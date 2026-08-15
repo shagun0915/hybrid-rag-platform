@@ -1,0 +1,222 @@
+{
+  "timestamp": "20260815_112048",
+  "results": [
+    {
+      "id": "resume_dynamics365",
+      "question": "What experience does this person have with Dynamics 365?",
+      "answer": "(Excerpt 1) The person has experience designing, developing, and delivering enterprise business applications using Dynamics 365 CE. \n\n(Excerpt 2) They also mention using Dynamics 365, Dataverse, and Power Pages while working at Visa Inc.",
+      "retrieved_filenames": [
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 45.35,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "resume_sonarqube",
+      "question": "What security tools were used for remediation?",
+      "answer": "There is no information in the provided excerpts about security tools used for remediation. However, Excerpt 2 mentions \"security findings (Checkmarx, SonarQube)\" as part of Shagun Yadav's earlier experience, but it does not specify that these tools were used for remediation in the context of the project.",
+      "retrieved_filenames": [
+        "Group 7- Contact to contactless fingerprint matching report.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 8.41,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 0.5,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "resume_verc_revenue",
+      "question": "How much annual revenue does the VERC platform enable?",
+      "answer": "$3.5B (Excerpt 1)",
+      "retrieved_filenames": [
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf"
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 4.66,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "resume_career_progression",
+      "question": "What was the career progression at Visa, from first role to most recent?",
+      "answer": "According to Excerpt 2, the career progression at Visa was: Software Development Intern \u2192 Software Engineer \u2192 Senior Software Engineer.",
+      "retrieved_filenames": [
+        "test.txt",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 6.5,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 0.5,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "resume_raahee",
+      "question": "What technology was used at the Raahee internship?",
+      "answer": "React.js, Node.js, Express.js, Socket.IO (Excerpt 1)",
+      "retrieved_filenames": [
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf"
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 5.42,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "research_rank1_accuracy",
+      "question": "What was the Rank-1 accuracy achieved by the fine-tuned Vision Transformer?",
+      "answer": "According to Excerpt 3, the Rank-1 accuracy achieved by the Vision Transformer was 98.49%.",
+      "retrieved_filenames": [
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 4.76,
+      "type": "answerable",
+      "expected_source_document": "Group_7_Major_Project_Report_C2CL.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "research_auc_roc",
+      "question": "What AUC-ROC score did the fingerprint recognition model achieve?",
+      "answer": "According to Excerpt 2, the fine-tuned ViT model achieved an AUC-ROC score of 99.99%.",
+      "retrieved_filenames": [
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 5.49,
+      "type": "answerable",
+      "expected_source_document": "research paper ieee.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 0.5,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "research_equal_error_rate",
+      "question": "What was the Equal Error Rate of the fine-tuned model?",
+      "answer": "0.0040 (Excerpt 2)",
+      "retrieved_filenames": [
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 4.13,
+      "type": "answerable",
+      "expected_source_document": "research paper ieee.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 0.5,
+      "keyword_coverage": 0.0,
+      "passed": false
+    },
+    {
+      "id": "research_dataset_used",
+      "question": "What fingerprint database was used to evaluate the models?",
+      "answer": "According to Excerpt 3 and Excerpt 4, the fingerprint database used to evaluate the models is the PolyU Dataset (Excerpt 3) and the PolyU fingerprint database (Excerpt 4).",
+      "retrieved_filenames": [
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf"
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 6.25,
+      "type": "answerable",
+      "expected_source_document": "Group_7_Major_Project_Report_C2CL.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "visa_visanet",
+      "question": "What network does Visa operate?",
+      "answer": "(Excerpt 1) Visa operates VisaNet, one of the world's most advanced processing networks.",
+      "retrieved_filenames": [
+        "test.txt",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf"
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 4.72,
+      "type": "answerable",
+      "expected_source_document": "test.txt",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "negative_unanswerable",
+      "question": "What is the capital of France?",
+      "answer": "There is no information about the capital of France in the provided context excerpts.",
+      "retrieved_filenames": [
+        "test.txt",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf"
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 5.28,
+      "type": "unanswerable",
+      "correct_abstention": false,
+      "passed": false
+    }
+  ]
+}

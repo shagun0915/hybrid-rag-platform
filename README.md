@@ -186,6 +186,99 @@ Note: the per-request `top_k` override from Day 3/4 was dropped for now
 `.env`. Could be reintroduced by threading it through `agentic_retrieve`;
 left out today to keep the loop's signature simple while it's new.
 
+## Evaluation — Day 6
+
+Run the golden-dataset evaluation against the live system:
+
+```bash
+docker compose exec api python -m app.services.evaluation.run_eval
+```
+
+This calls `/query` for every case in `app/services/evaluation/golden_dataset.py`,
+scores each result, prints a summary table, and saves a full JSON report
+to `app/services/evaluation/reports/`.
+
+**Metrics measured:**
+- **Recall@K** — did the correct source document appear anywhere in the retrieved results?
+- **MRR (Mean Reciprocal Rank)** — did it appear *near the top*, not just somewhere in range?
+- **Keyword coverage** — does the generated answer contain the expected facts?
+- **Correct abstention** — for the one deliberate unanswerable case, does the system say "I don't know" instead of hallucinating?
+- **Retrieval attempts** — how often did the agentic reformulation loop actually fire?
+
+**Honest scope note:** this is an 11-question hand-built golden set, not
+the 100-300 questions a production eval suite would have — a deliberate
+choice for a solo one-week build, not a hidden shortcut. Every question
+is traced to content this system has already returned correctly during
+manual testing on Days 3-5, so the ground truth itself is verified. The
+harness (metrics, runner, report format) scales to any dataset size
+without code changes — expanding the question set is natural follow-up
+work.
+
+**Known limitation, stated plainly:** keyword coverage checks for
+substring presence, not semantic correctness — a technically-worded-wrong
+answer that happens to contain the right number would still "pass." An
+LLM-as-judge (a second model scoring "does this answer correctly address
+the question") is the standard stronger approach and the honest v2
+upgrade path from here.
+
+## Known Limitations
+
+Found by actually running the system, not predicted in advance. Listed
+here plainly rather than left for someone else to discover.
+
+### Retrieval is strong on literal terms, measurably weaker on paraphrases
+
+The clearest example, caught by the Day 6 eval suite: asking **"SonarQube"**
+directly retrieves the correct chunk with a cross-encoder rerank score of
+**0.98** — confident, correct, cited. But asking the *semantically
+identical* question **"What security tools were used for remediation?"**
+— which never uses the word "SonarQube" — collapses retrieval confidence
+to **0.0006**. The correct chunk is still technically present in the
+final context (tied last among five near-zero-scored candidates), but the
+LLM reads a low-signal excerpt and reports it found nothing.
+
+Two compounding causes, both identified from the actual eval report
+(`app/services/evaluation/reports/`), not guessed at:
+1. **Chunking split the fact from its context.** The original sentence
+   was "...owned remediation of ~80% of application security findings
+   (Checkmarx, SonarQube)." Word-based chunking (Day 2) cut this near a
+   boundary, so the retrieved chunk contains "SonarQube" but not
+   "remediation" — the exact word the paraphrased question used.
+2. **The reranker has no signal to work with when both query and chunk
+   use different vocabulary for the same idea.** This is a known,
+   general weakness of cross-encoder rerankers trained primarily on
+   direct-match relevance, not paraphrase understanding.
+
+**What would actually fix this** (v2, not built): semantic chunking
+(splitting on topic boundaries instead of fixed word counts, so a fact
+and its context can't be separated mid-sentence), and/or query expansion
+before retrieval (generating a few paraphrased/synonym versions of the
+query and searching with all of them, not just the literal one asked).
+
+### Small local LLM (Ollama) shows real answer variance between identical runs
+
+Re-running the exact same 11-question eval suite three times in a row
+produced different pass/fail results on two borderline questions
+(`resume_sonarqube`, `resume_career_progression`) — not because retrieval
+changed, but because Ollama's `llama3.1:8b` phrased answers differently
+run to run given weakly-ranked context. This is a genuine, known
+tradeoff of the free/local provider path (see `LLM_PROVIDER` in
+`.env.example`) — a larger model like Claude would very likely show less
+run-to-run variance on the same borderline evidence, though this hasn't
+been directly A/B tested here.
+
+### Other documented tradeoffs (noted inline in code, summarized here)
+
+- **Lexical search is Postgres full-text search, not literal BM25** — a
+  related but different ranking formula. See `keyword_search.py`.
+- **`to_tsvector` is computed on the fly, not stored in an indexed
+  column** — simpler schema, no migration needed, but slower at large
+  document-count scale than a persisted GIN-indexed column would be.
+- **Keyword-coverage faithfulness checking is substring presence, not
+  semantic correctness** — see the Evaluation section above.
+- **The golden dataset is 11 hand-verified questions, not 100-300** — a
+  deliberate scope choice for a solo one-week build.
+
 ## Roadmap
 
 - [x] **Day 1** — Repo structure, FastAPI skeleton, Postgres+pgvector via Docker, health checks
@@ -193,7 +286,7 @@ left out today to keep the loop's signature simple while it's new.
 - [x] **Day 3** — Baseline RAG: pgvector cosine-similarity retrieval -> swappable Ollama/Claude generation -> grounded answer with sources
 - [x] **Day 4** — Hybrid retrieval: vector + Postgres full-text search, fused via Reciprocal Rank Fusion
 - [x] **Day 5** — Cross-encoder reranking + agentic query reformulation with a hard iteration cap
-- [ ] **Day 6** — Evaluation: golden dataset, Recall@K, MRR, faithfulness
+- [x] **Day 6** — Evaluation: golden dataset, Recall@K, MRR, keyword coverage, correct-abstention check
 - [ ] **Day 7** — Deployment, docs, architecture polish
 
 **v2 roadmap** (deferred past the initial week, built as follow-up commits):

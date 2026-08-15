@@ -1,0 +1,680 @@
+{
+  "timestamp": "20260815_113609",
+  "results": [
+    {
+      "id": "resume_dynamics365",
+      "question": "What experience does this person have with Dynamics 365?",
+      "answer": "(Excerpt 1) Shagun Yadav has experience designing, developing, and delivering enterprise business applications using Microsoft Dynamics 365 CE, Power Pages, Dataverse, Power Automate, etc.",
+      "retrieved_filenames": [
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.9709,
+          "content_preview": "SHAGUN YADAV Senior Software Engineer | Microsoft Dynamics 365 CE | Power Platform | Power Pages Bengaluru, India | shagun0915@gmail.com | +91 98104 90187 | linkedin.com/in/shagunyadav0915 | github.co..."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 1,
+          "rerank_score": 0.1454,
+          "content_preview": "Software Engineer) | Jun 2023 \u2013 Jul 2026 | Career progression: Software Development Intern \u2192 Software Engineer \u2192 Senior Software Engineer \u2022Designed, developed, and maintained enterprise-scale business..."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 2,
+          "rerank_score": 0.0001,
+          "content_preview": "security findings (Checkmarx, SonarQube). EARLIER EXPERIENCE \u2022Raahee \u2014 Software Development Intern (Jun\u2013Sep 2021): Built and enhanced the startup's React.js web application \u2014 responsive UI components,..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.0,
+          "content_preview": "A PROJECT REPORT on Contact -Based and Contactless Fingerprint Matching Framework Based on a Fine -Tuned Vision Transformer Model Submitted in partial fulfilment of the requirements for the award of t..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 8,
+          "rerank_score": 0.0,
+          "content_preview": "impressions on the surface of contact -based sensors, are known to be a security risk since they can be lifted to create spoof fingerprints for presentation attacks, which interfere with new acquisiti..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What experience does this person have with Dynamics 365?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.9709
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 44.9,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "resume_sonarqube",
+      "question": "What security tools were used for remediation?",
+      "answer": "Unfortunately, the provided context excerpts do not mention any specific security tools used for remediation.",
+      "retrieved_filenames": [
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 8,
+          "rerank_score": 0.0001,
+          "content_preview": "impressions on the surface of contact -based sensors, are known to be a security risk since they can be lifted to create spoof fingerprints for presentation attacks, which interfere with new acquisiti..."
+        },
+        {
+          "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+          "chunk_index": 2,
+          "rerank_score": 0.0,
+          "content_preview": "by dirt or humidity on the capturing device plate. The contact-based requirement can be a serious threat to hygiene as there is a wide range of dis- eases, e.g. severe acute respiratory syndrome (SARS..."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 2,
+          "rerank_score": 0.0,
+          "content_preview": "security findings (Checkmarx, SonarQube). EARLIER EXPERIENCE \u2022Raahee \u2014 Software Development Intern (Jun\u2013Sep 2021): Built and enhanced the startup's React.js web application \u2014 responsive UI components,..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 26,
+          "rerank_score": 0.0,
+          "content_preview": "14 CHAPTER 6 RESULTS A variety of comparative experimental results are presented in this section. The two deep learning models, sequential CNN and fine -tuned ViT, were assessed on the PolyU fingerpri..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 7,
+          "rerank_score": 0.0,
+          "content_preview": "Law enf orcement and forensic organisations all over the world employ fingerprint recognition technology. 1.1 Motivation The great majority of fingerprint -capturing techniques still require a person ..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What security tools were used for remediation?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.0006
+        },
+        {
+          "attempt": 2,
+          "query": "What security measures and tools were implemented to remediate vulnerabilities in the latest security incident report?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.0001
+        }
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 6.48,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 0.3333,
+      "keyword_coverage": 0.0,
+      "passed": false
+    },
+    {
+      "id": "resume_verc_revenue",
+      "question": "How much annual revenue does the VERC platform enable?",
+      "answer": "$3.5B (Excerpt 1)",
+      "retrieved_filenames": [
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 1,
+          "rerank_score": 0.9963,
+          "content_preview": "Software Engineer) | Jun 2023 \u2013 Jul 2026 | Career progression: Software Development Intern \u2192 Software Engineer \u2192 Senior Software Engineer \u2022Designed, developed, and maintained enterprise-scale business..."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 2,
+          "rerank_score": 0.0,
+          "content_preview": "security findings (Checkmarx, SonarQube). EARLIER EXPERIENCE \u2022Raahee \u2014 Software Development Intern (Jun\u2013Sep 2021): Built and enhanced the startup's React.js web application \u2014 responsive UI components,..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 1,
+          "rerank_score": 0.0,
+          "content_preview": "Name: Garima Garg Enrollment No: 0 030101201 9 Enrollment No: 0 150101201 9 Name: Shagun Yadav Name: Shrishti Goyal Enrollment No: 0 060101201 9 Enrollment No: 0 220101201 9 3 UNDERTAKING REGARDING AN..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 25,
+          "rerank_score": 0.0,
+          "content_preview": "which contains 14 million images divided into 21,841 classes. We started with the pre -trained model and fin e- tuned it on the PolyU dataset[ 1]. 13 The model was trained over four epochs with a batc..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 20,
+          "rerank_score": 0.0,
+          "content_preview": "ROC curves are calculated using the macro -averaging approach, which calculates the True Positive Rate(sensitivity) and False Positive Rate(1 - specificity) separately for each class and then averages..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "How much annual revenue does the VERC platform enable?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.9963
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 4.74,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "resume_career_progression",
+      "question": "What was the career progression at Visa, from first role to most recent?",
+      "answer": "According to Excerpt 3, the career progression at Visa was:\n\nSoftware Development Intern \u2192 Software Engineer \u2192 Senior Software Engineer",
+      "retrieved_filenames": [
+        "test.txt",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "test.txt",
+          "chunk_index": 0,
+          "rerank_score": 0.0033,
+          "content_preview": "Visa is a global payments technology company. It operates VisaNet, one of the world's most advanced processing networks."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.003,
+          "content_preview": "SHAGUN YADAV Senior Software Engineer | Microsoft Dynamics 365 CE | Power Platform | Power Pages Bengaluru, India | shagun0915@gmail.com | +91 98104 90187 | linkedin.com/in/shagunyadav0915 | github.co..."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 1,
+          "rerank_score": 0.0023,
+          "content_preview": "Software Engineer) | Jun 2023 \u2013 Jul 2026 | Career progression: Software Development Intern \u2192 Software Engineer \u2192 Senior Software Engineer \u2022Designed, developed, and maintained enterprise-scale business..."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 2,
+          "rerank_score": 0.0,
+          "content_preview": "security findings (Checkmarx, SonarQube). EARLIER EXPERIENCE \u2022Raahee \u2014 Software Development Intern (Jun\u2013Sep 2021): Built and enhanced the startup's React.js web application \u2014 responsive UI components,..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.0,
+          "content_preview": "A PROJECT REPORT on Contact -Based and Contactless Fingerprint Matching Framework Based on a Fine -Tuned Vision Transformer Model Submitted in partial fulfilment of the requirements for the award of t..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What was the career progression at Visa, from first role to most recent?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.0015
+        },
+        {
+          "attempt": 2,
+          "query": "Visa company career path employee progression",
+          "candidates_found": 10,
+          "top_rerank_score": 0.0033
+        }
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 6.01,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 0.5,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "resume_raahee",
+      "question": "What technology was used at the Raahee internship?",
+      "answer": "According to Excerpt 1, the technology used at the Raahee internship was React.js.",
+      "retrieved_filenames": [
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 2,
+          "rerank_score": 0.9512,
+          "content_preview": "security findings (Checkmarx, SonarQube). EARLIER EXPERIENCE \u2022Raahee \u2014 Software Development Intern (Jun\u2013Sep 2021): Built and enhanced the startup's React.js web application \u2014 responsive UI components,..."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 1,
+          "rerank_score": 0.5734,
+          "content_preview": "Software Engineer) | Jun 2023 \u2013 Jul 2026 | Career progression: Software Development Intern \u2192 Software Engineer \u2192 Senior Software Engineer \u2022Designed, developed, and maintained enterprise-scale business..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 2,
+          "rerank_score": 0.0,
+          "content_preview": "Ela Kumar , Assistant Professor, CSE, Indira Gandhi Delhi Technical University for Women, Delhi. It is submitted in partial fulfilment of the requirements for the award of the Bachelor of Technology d..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.0,
+          "content_preview": "A PROJECT REPORT on Contact -Based and Contactless Fingerprint Matching Framework Based on a Fine -Tuned Vision Transformer Model Submitted in partial fulfilment of the requirements for the award of t..."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.0,
+          "content_preview": "SHAGUN YADAV Senior Software Engineer | Microsoft Dynamics 365 CE | Power Platform | Power Pages Bengaluru, India | shagun0915@gmail.com | +91 98104 90187 | linkedin.com/in/shagunyadav0915 | github.co..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What technology was used at the Raahee internship?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.9512
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 5.46,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "research_rank1_accuracy",
+      "question": "What was the Rank-1 accuracy achieved by the fine-tuned Vision Transformer?",
+      "answer": "98.49% (Excerpt 3)",
+      "retrieved_filenames": [
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 28,
+          "rerank_score": 0.9993,
+          "content_preview": "equal error rate of 0.0769 and a lower rank -1 accuracy of 93.34%. This suggests that it is less accurate in matching fingerprints than the Vision Transformer. Figure 6.2. Comparison graph of Rank -1 ..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 21,
+          "rerank_score": 0.9983,
+          "content_preview": "less accurate in matching fingerprints than the Vision Transformer. Fig. 11. Comparison graph of Rank -1 Accuracy of both models Overall, the results indicate that the Vision Transformer is a more e f..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 20,
+          "rerank_score": 0.993,
+          "content_preview": "ROC curves are calculated using the macro -averaging approach, which calculates the True Positive Rate(sensitivity) and False Positive Rate(1 - specificity) separately for each class and then averages..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 27,
+          "rerank_score": 0.9863,
+          "content_preview": "contactless fingerprints. Figure 6.1 represents the ROC curve for the sequential CNN and Fine -Tuned ViT Model. ROC curves are calculated using the macro -averaging approach, which calculates the True..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 30,
+          "rerank_score": 0.9689,
+          "content_preview": "-based and contactless fingerprints, the fine -tuned ViT model outperformed the sequential CNN model. The results show that using transformer -based architectures, attention mechanisms, and transfe r ..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What was the Rank-1 accuracy achieved by the fine-tuned Vision Transformer?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.9993
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 4.4,
+      "type": "answerable",
+      "expected_source_document": "Group_7_Major_Project_Report_C2CL.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "research_auc_roc",
+      "question": "What AUC-ROC score did the fingerprint recognition model achieve?",
+      "answer": "The fine-tuned ViT model achieved an AUC-ROC score of 99.99% (Excerpt 2, Table II).",
+      "retrieved_filenames": [
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 30,
+          "rerank_score": 0.9881,
+          "content_preview": "-based and contactless fingerprints, the fine -tuned ViT model outperformed the sequential CNN model. The results show that using transformer -based architectures, attention mechanisms, and transfe r ..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 19,
+          "rerank_score": 0.9676,
+          "content_preview": "section. The two deep learning models, sequential CNN and fine -tuned ViT, were assessed on the PolyU fingerprint database[ 1], and their performances were compared. We have used various performance e..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 26,
+          "rerank_score": 0.928,
+          "content_preview": "14 CHAPTER 6 RESULTS A variety of comparative experimental results are presented in this section. The two deep learning models, sequential CNN and fine -tuned ViT, were assessed on the PolyU fingerpri..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 25,
+          "rerank_score": 0.7569,
+          "content_preview": "which contains 14 million images divided into 21,841 classes. We started with the pre -trained model and fin e- tuned it on the PolyU dataset[ 1]. 13 The model was trained over four epochs with a batc..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 31,
+          "rerank_score": 0.7231,
+          "content_preview": "well in this study, further research is needed to optimize the model's hyperparameters and explore different architectures. In addition, the dataset used in this study was limited to a single database..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What AUC-ROC score did the fingerprint recognition model achieve?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.9881
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 5.73,
+      "type": "answerable",
+      "expected_source_document": "research paper ieee.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 0.5,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "research_equal_error_rate",
+      "question": "What was the Equal Error Rate of the fine-tuned model?",
+      "answer": "According to Excerpt 2, the Equal Error Rate of the fine-tuned ViT model was 0.0040.",
+      "retrieved_filenames": [
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 28,
+          "rerank_score": 0.9986,
+          "content_preview": "equal error rate of 0.0769 and a lower rank -1 accuracy of 93.34%. This suggests that it is less accurate in matching fingerprints than the Vision Transformer. Figure 6.2. Comparison graph of Rank -1 ..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 19,
+          "rerank_score": 0.9948,
+          "content_preview": "section. The two deep learning models, sequential CNN and fine -tuned ViT, were assessed on the PolyU fingerprint database[ 1], and their performances were compared. We have used various performance e..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 26,
+          "rerank_score": 0.9906,
+          "content_preview": "14 CHAPTER 6 RESULTS A variety of comparative experimental results are presented in this section. The two deep learning models, sequential CNN and fine -tuned ViT, were assessed on the PolyU fingerpri..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 20,
+          "rerank_score": 0.9791,
+          "content_preview": "ROC curves are calculated using the macro -averaging approach, which calculates the True Positive Rate(sensitivity) and False Positive Rate(1 - specificity) separately for each class and then averages..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 27,
+          "rerank_score": 0.9789,
+          "content_preview": "contactless fingerprints. Figure 6.1 represents the ROC curve for the sequential CNN and Fine -Tuned ViT Model. ROC curves are calculated using the macro -averaging approach, which calculates the True..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What was the Equal Error Rate of the fine-tuned model?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.9986
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 4.8,
+      "type": "answerable",
+      "expected_source_document": "research paper ieee.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 0.5,
+      "keyword_coverage": 0.5,
+      "passed": true
+    },
+    {
+      "id": "research_dataset_used",
+      "question": "What fingerprint database was used to evaluate the models?",
+      "answer": "(Excerpt 1) The PolyU Contactless to Contact-based fingerprint database and the Benchmark 2D/3D Fingerprint Database were used.",
+      "retrieved_filenames": [
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf",
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 31,
+          "rerank_score": 0.998,
+          "content_preview": "well in this study, further research is needed to optimize the model's hyperparameters and explore different architectures. In addition, the dataset used in this study was limited to a single database..."
+        },
+        {
+          "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+          "chunk_index": 5,
+          "rerank_score": 0.9885,
+          "content_preview": "that the unwarp sample has enough overlap with its cor- responding contact-based finger- print. The overlapping informa- tion of the unwarped contactless fingerprint is computed by the second model, a..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 8,
+          "rerank_score": 0.9835,
+          "content_preview": "significant contributions of this work is that a single model was trained across four different datasets for evaluation purposes. This approach is more difficult than training individual models on a t..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 26,
+          "rerank_score": 0.9834,
+          "content_preview": "14 CHAPTER 6 RESULTS A variety of comparative experimental results are presented in this section. The two deep learning models, sequential CNN and fine -tuned ViT, were assessed on the PolyU fingerpri..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 19,
+          "rerank_score": 0.9827,
+          "content_preview": "section. The two deep learning models, sequential CNN and fine -tuned ViT, were assessed on the PolyU fingerprint database[ 1], and their performances were compared. We have used various performance e..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What fingerprint database was used to evaluate the models?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.998
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 5.79,
+      "type": "answerable",
+      "expected_source_document": "Group_7_Major_Project_Report_C2CL.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "visa_visanet",
+      "question": "What network does Visa operate?",
+      "answer": "(Excerpt 1) Visa operates VisaNet, one of the world's most advanced processing networks.",
+      "retrieved_filenames": [
+        "test.txt",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "test.txt",
+          "chunk_index": 0,
+          "rerank_score": 0.9997,
+          "content_preview": "Visa is a global payments technology company. It operates VisaNet, one of the world's most advanced processing networks."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.0,
+          "content_preview": "A PROJECT REPORT on Contact -Based and Contactless Fingerprint Matching Framework Based on a Fine -Tuned Vision Transformer Model Submitted in partial fulfilment of the requirements for the award of t..."
+        },
+        {
+          "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+          "chunk_index": 6,
+          "rerank_score": 0.0,
+          "content_preview": "captured from 336 clients. Another contact- less fingerprint database used in this work is the Benchmark 2D/3D Fin- gerprint Database, which provides contactless and contact-based fingerprints from 15..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 3,
+          "rerank_score": 0.0,
+          "content_preview": "any other degree or diploma to the simplest of my knowledge and belief. __________________ Prof. Ela Kumar Professor, C SE 5 ABSTRACT The simplicity and hygienic benefits of contactless fingerprint id..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.0,
+          "content_preview": "Contact -Based and Contactless Fingerprint Matching Framework Based on a Fine -Tuned Vision Transformer Model Mansi Sharma Dept. of Computer Science and Engineering Indira Gandhi Delhi Technical Unive..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What network does Visa operate?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.9997
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 4.79,
+      "type": "answerable",
+      "expected_source_document": "test.txt",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "passed": true
+    },
+    {
+      "id": "negative_unanswerable",
+      "question": "What is the capital of France?",
+      "answer": "There is no information in the provided context excerpts about the capital of France.",
+      "retrieved_filenames": [
+        "test.txt",
+        "research paper ieee.pdf",
+        "research paper ieee.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf",
+        "Group 7- Contact to contactless fingerprint matching report.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "test.txt",
+          "chunk_index": 0,
+          "rerank_score": 0.0,
+          "content_preview": "Visa is a global payments technology company. It operates VisaNet, one of the world's most advanced processing networks."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 12,
+          "rerank_score": 0.0,
+          "content_preview": "and valley structures can be visualized and analyzed more easily. For improving the ridge -valley contrast, we used a combination of image enhancement te chniques, including a) An adaptive histogram e..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 9,
+          "rerank_score": 0.0,
+          "content_preview": "and to create robust and dependable fingerprint recognition systems. The dataset has been split into two sessions. There are 2976 contactless 2D fingerprint imag es in the database, each with a corres..."
+        },
+        {
+          "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+          "chunk_index": 8,
+          "rerank_score": 0.0,
+          "content_preview": "pre- cise minutiae extraction and pose-compensation approach as compared with the conventional minutiae extraction approaches. All the minutiae extracted from the network are subjected to a three stag..."
+        },
+        {
+          "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+          "chunk_index": 11,
+          "rerank_score": 0.0,
+          "content_preview": "model encom- passes four convolutional layers, four Batch Normalization Layer, four Leaky Relu Layer, four Max pool Layer, one Flatten Dense and SoftMax layers.The Dataset consists of 3,120 contactles..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What is the capital of France?",
+          "candidates_found": 10,
+          "top_rerank_score": 0.0
+        },
+        {
+          "attempt": 2,
+          "query": "capital city of metropolitan France",
+          "candidates_found": 10,
+          "top_rerank_score": 0.0
+        }
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 5.32,
+      "type": "unanswerable",
+      "correct_abstention": true,
+      "passed": true
+    }
+  ]
+}
