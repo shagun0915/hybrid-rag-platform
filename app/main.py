@@ -13,7 +13,7 @@ from fastapi import FastAPI
 
 from app.core.config import settings
 from app.core.database import init_db
-from app.api import health
+from app.api import health, documents
 
 
 @asynccontextmanager
@@ -28,6 +28,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
 app.include_router(health.router)
+app.include_router(documents.router)
 
 
 @app.get("/")

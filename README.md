@@ -94,10 +94,27 @@ pip install -r requirements.txt
 pytest
 ```
 
+## API — Day 2 additions
+
+```bash
+# Upload a document (.txt, .md, or .pdf — max 20MB)
+curl -X POST http://localhost:8000/documents/upload \
+  -F "file=@/path/to/your/document.pdf"
+
+# List all uploaded documents and their status
+curl http://localhost:8000/documents
+
+# Inspect how a document got chunked (debugging tool)
+curl http://localhost:8000/documents/{document_id}/chunks
+```
+
+First upload will be slower than subsequent ones — the embedding model
+(~130MB) downloads once on first use and is cached after that.
+
 ## Roadmap
 
 - [x] **Day 1** — Repo structure, FastAPI skeleton, Postgres+pgvector via Docker, health checks
-- [ ] **Day 2** — Document ingestion: parsing, chunking, embeddings, vector storage
+- [x] **Day 2** — Document ingestion: parsing (.txt/.md/.pdf), chunking, embeddings (fastembed/bge-small), storage in pgvector
 - [ ] **Day 3** — Baseline RAG: vector retrieval -> LLM -> answer
 - [ ] **Day 4** — Hybrid retrieval: BM25 + vector fusion
 - [ ] **Day 5** — Cross-encoder reranking + agentic query reformulation

@@ -36,12 +36,19 @@ async def get_db() -> AsyncSession:
 async def init_db() -> None:
     """
     Runs once at startup.
-    Enables the pgvector extension and creates tables if they don't exist.
-    Day 1: this just enables the extension so we can prove connectivity.
-    Day 2: this will also create the documents/chunks tables.
+    Enables the pgvector extension, then creates any tables that don't
+    exist yet (Document, Chunk as of Day 2). Uses create_all rather than
+    a migration tool for now — fine for a project at this stage; a real
+    production system would use Alembic so schema changes are versioned
+    and reversible instead of "whatever create_all currently thinks the
+    models look like."
     """
+    from app.models.base import Base
+    from app.models import document  # noqa: F401 — import registers the models on Base.metadata
+
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        await conn.run_sync(Base.metadata.create_all)
 
 
 async def check_db_connection() -> bool:
