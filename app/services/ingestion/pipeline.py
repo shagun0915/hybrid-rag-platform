@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.document import Document, Chunk, DocumentStatus
 from app.services.ingestion.parser import extract_text
-from app.services.ingestion.chunker import chunk_text
+from app.services.ingestion.chunking_strategy import get_chunks
 from app.services.ingestion.embedder import embed_texts
 
 MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024  # 20 MB
@@ -42,7 +42,7 @@ async def ingest_document(
 
     try:
         text = extract_text(filename, content)
-        pieces = chunk_text(text)
+        pieces = await get_chunks(text)
         vectors = await embed_texts(pieces)
 
         for index, (piece, vector) in enumerate(zip(pieces, vectors)):

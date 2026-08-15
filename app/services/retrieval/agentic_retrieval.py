@@ -43,6 +43,25 @@ def _should_stop(top_score: float | None, attempt: int, max_attempts: int, thres
     return False
 
 
+def _summarize_candidates(candidates: list[dict]) -> list[dict]:
+    """Compact summary of the pre-rerank hybrid-search candidate pool —
+    filename, chunk index, and fusion score, not full chunk content
+    (that's already visible in the final `sources`, no need to duplicate
+    it here). Added after a real debugging session where a chunk's
+    absence from the final results was ambiguous: was it never retrieved
+    by hybrid search at all, or was it retrieved but reranked out? Those
+    are different problems with different fixes, and the old attempts
+    log (candidate *count* only) couldn't distinguish between them."""
+    return [
+        {
+            "filename": c["filename"],
+            "chunk_index": c["chunk_index"],
+            "fusion_score": c.get("fusion_score"),
+        }
+        for c in candidates
+    ]
+
+
 async def agentic_retrieve(db, question: str) -> dict:
     current_query = question
     reranked: list[dict] = []
@@ -62,6 +81,9 @@ async def agentic_retrieve(db, question: str) -> dict:
                 "query": current_query,
                 "candidates_found": len(candidates),
                 "top_rerank_score": top_score,
+                # Pre-rerank pool — lets you distinguish "never retrieved
+                # by hybrid search" from "retrieved but reranked out."
+                "pre_rerank_candidates": _summarize_candidates(candidates),
             }
         )
 

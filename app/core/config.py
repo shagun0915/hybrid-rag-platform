@@ -36,6 +36,16 @@ class Settings(BaseSettings):
     rerank_top_n: int = 5
     rrf_k: int = 60  # Reciprocal Rank Fusion constant — see hybrid_search.py
 
+    # Chunking strategy — swappable, same pattern as LLM_PROVIDER.
+    # "semantic" (default) groups sentences by embedding-similarity
+    # topic shifts, not fixed word counts — see semantic_chunker.py.
+    # "fixed" is the original Day 2 word-count splitter, kept available
+    # for comparison/rollback.
+    chunking_strategy: str = "semantic"
+    semantic_similarity_threshold: float = 0.55
+    semantic_chunk_max_words: int = 300
+    semantic_chunk_min_words: int = 50
+
     # Agentic retrieval (Day 5) — the iteration cap is not optional to
     # set; every agent loop needs one, or a persistently weak query would
     # retry forever. See agentic_retrieval.py.

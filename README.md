@@ -96,7 +96,7 @@ Answer + Sources + Retrieval Debug Trace
 Ingestion pipeline (separate path):
 
 ```
-Upload -> Parse (.txt/.md/.pdf) -> Chunk (word-based, overlap)
+Upload -> Parse (.txt/.md/.pdf) -> Chunk (semantic, sentence-similarity based)
   -> Embed (fastembed, bge-small, 384-dim) -> Store (Postgres + pgvector)
 ```
 
@@ -127,7 +127,8 @@ app/
   models/
     document.py                 Document + Chunk (pgvector column) tables
   services/
-    ingestion/                   parser.py, chunker.py, embedder.py, pipeline.py
+    ingestion/                   parser.py, chunker.py + semantic_chunker.py
+                                  (swappable via chunking_strategy.py), embedder.py, pipeline.py
     retrieval/                    vector_search.py, keyword_search.py,
                                    hybrid_search.py, reranker.py,
                                    query_reformulation.py, agentic_retrieval.py
@@ -157,6 +158,10 @@ Every tunable lives in `.env` (copy from `.env.example`):
 | `OLLAMA_MODEL` | `llama3.1:8b` | Local model, if using Ollama |
 | `ANTHROPIC_MODEL` | `claude-sonnet-5` | Cloud model, if using Anthropic |
 | `EMBEDDING_DIMENSION` | `384` | Must match the embedding model's actual output size |
+| `CHUNKING_STRATEGY` | `semantic` | `semantic` (sentence-similarity based) or `fixed` (word-count based) |
+| `SEMANTIC_SIMILARITY_THRESHOLD` | `0.55` | Below this cosine similarity between consecutive sentences, start a new chunk |
+| `SEMANTIC_CHUNK_MAX_WORDS` | `300` | Safety cap so a topically-consistent section doesn't become one giant chunk |
+| `SEMANTIC_CHUNK_MIN_WORDS` | `50` | Safety floor so bullet-heavy documents don't fragment into tiny chunks |
 | `RETRIEVAL_TOP_K` | `10` | Candidates retrieved before reranking |
 | `RERANK_TOP_N` | `5` | Final chunks sent to the LLM after reranking |
 | `RRF_K` | `60` | Reciprocal Rank Fusion constant (standard default) |
@@ -190,29 +195,65 @@ code changes.
 Found by actually running the system and evaluation suite, not predicted
 in advance.
 
-### Retrieval is strong on literal terms, measurably weaker on paraphrases
+### Retrieval is strong on literal terms, measurably weaker on paraphrases — and here's exactly why, traced through two fixes
 
-Asking **"SonarQube"** directly retrieves the correct chunk with a
-cross-encoder rerank score of **0.98** — confident, correct, cited.
-Asking the *semantically identical* **"What security tools were used for
-remediation?"** — which never uses the word "SonarQube" — collapses
-retrieval confidence to **0.0006**. The correct chunk is still present in
-the final context (tied last among five near-zero-scored candidates),
-but the LLM reads a low-signal excerpt and reports finding nothing.
+**The original finding (Day 6):** asking **"SonarQube"** directly
+retrieves the correct chunk with a cross-encoder rerank score of **0.98**
+— confident, correct, cited. Asking the *semantically identical* **"What
+security tools were used for remediation?"** — never uses the word
+"SonarQube" — collapsed retrieval confidence to **0.0006**.
 
-Two compounding, diagnosed causes (found via the Day 6 eval report, not
-guessed):
-1. **Chunking split the fact from its context** — word-based chunking cut
-   the original sentence near a boundary, so the retrieved chunk contains
-   "SonarQube" but not "remediation," the exact word the paraphrase used.
-2. **Cross-encoder rerankers have limited paraphrase understanding** —
-   a known, general weakness when query and chunk vocabulary diverge.
+**First diagnosed cause: chunking split the fact from its context.** The
+original word-based chunker cut the sentence "...remediation of security
+findings (Checkmarx, SonarQube)" near a boundary, so the retrieved chunk
+contained "SonarQube" but not "remediation." **Fixed** — semantic
+chunking (`semantic_chunker.py`, `CHUNKING_STRATEGY=semantic`) groups
+sentences by embedding-similarity topic shifts instead of fixed word
+counts. Verified directly after re-ingestion: the full sentence now
+stays intact as one chunk.
 
-**Real fix (v2, not built):** semantic chunking (topic boundaries instead
-of fixed word counts) and/or query expansion (searching with a few
-paraphrased variants of the query, not just the literal one asked).
+**But re-testing the exact same paraphrased question after the fix still
+initially failed** — for a *different*, more precise reason, only
+visible after adding `pre_rerank_candidates` logging to the retrieval
+debug trace. On attempt 1, the correct chunk (now containing the full
+"remediation...SonarQube" sentence) **never entered the initial hybrid-
+search candidate pool at all** — not a reranking failure, a retrieval
+failure one stage earlier. With 112 fingerprint-research-paper chunks
+against 4 resume chunks in the corpus, the numerically dominant content
+out-competed the correct chunk for a spot in the initial top-10, before
+reranking ever got a chance to evaluate it.
+
+**What actually recovered the correct answer: the Day 5 agentic retry
+loop.** Attempt 1 scored low confidence (`0.0005`, well under the `0.5`
+threshold), so the system reformulated the query and tried again. The
+reformulation ("...in the recent ransomware attack on the company's
+network?") was an imperfect paraphrase, but different wording was enough
+to shift hybrid search's ranking — the correct chunk entered attempt 2's
+candidate pool, reranking correctly picked it out, and the LLM generated
+a correct, properly-cited answer: *"According to Excerpt 1, the security
+tools used for remediation were Checkmarx and SonarQube."*
+
+**The honest, complete picture, not simplified:**
+- Semantic chunking fixed a real bug (fact/context separation) — verified.
+- It did *not* fix corpus-imbalance in initial retrieval — a different,
+  still-open problem.
+- The agentic reformulation loop (Day 5) is what actually made this
+  specific query succeed anyway — not by fixing the root cause, but by
+  giving the system a second, differently-angled attempt.
+- Absolute rerank scores here were tiny (`0.0004`–`0.0005`) even on the
+  attempt that produced a *correct* answer — the reranker is poorly
+  calibrated in absolute terms on this corpus, even where its *relative*
+  ranking among candidates still worked. Low confidence didn't mean
+  wrong here, just honestly uncertain.
+
+**Real fix for the still-open corpus-imbalance problem (v2, not built):**
+query expansion (searching with a few paraphrased variants per attempt,
+not just one) and/or per-document-type retrieval weighting, so a
+numerically small but relevant document class doesn't get systematically
+out-competed by a numerically larger one.
 
 ### Small local LLM shows real answer variance between identical runs
+
 
 Re-running the same 11-question suite three times produced different
 pass/fail results on two borderline questions — not from retrieval
@@ -268,13 +309,15 @@ moving to the next:
 - **Day 5** — Cross-encoder reranking + agentic query reformulation with a hard iteration cap.
 - **Day 6** — Real evaluation: golden dataset, Recall@K/MRR/keyword coverage, found and fixed two false-failure gaps in the eval harness itself, documented real system limitations discovered along the way.
 - **Day 7** — Deployment guidance, README consolidation, `.dockerignore`, API healthcheck, LICENSE.
+- **v2 follow-up (semantic chunking)** — Replaced fixed word-count chunking with embedding-similarity-based sentence grouping, fixing the fact/context-separation cause of the SonarQube limitation. Swappable via `CHUNKING_STRATEGY`, not a forced rewrite.
+- **v2 follow-up (candidate-pool visibility + honest re-diagnosis)** — Re-tested the fix against the real system rather than assuming it worked; found the same query still initially failed for a *different* reason (corpus imbalance at the hybrid-search stage, not chunking). Added `pre_rerank_candidates` logging to distinguish "never retrieved" from "retrieved but reranked out." Discovered the Day 5 agentic retry loop — not the chunking fix — was what actually recovered a correct answer. See Known Limitations for the full trace.
 
 ## v2 roadmap (deferred, not built)
 
 Multimodal document processing (OCR, tables), claim-level citation
 verification, confidence-aware human review queue, full
 observability/tracing integration, LLM-as-judge faithfulness scoring,
-semantic chunking, query expansion.
+query expansion.
 
 ## License
 
