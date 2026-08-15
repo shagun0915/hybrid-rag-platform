@@ -35,5 +35,19 @@ class Settings(BaseSettings):
     retrieval_top_k: int = 10
     rerank_top_n: int = 5
 
+    # LLM (Day 3+) — provider is swappable via LLM_PROVIDER.
+    # "ollama" = free, local, runs on your machine, no API key needed.
+    # "anthropic" = real Claude, requires ANTHROPIC_API_KEY + billing.
+    llm_provider: str = "ollama"
+    llm_max_tokens: int = 1024
+
+    # Ollama (local, free)
+    ollama_base_url: str = "http://host.docker.internal:11434"
+    ollama_model: str = "llama3.1:8b"
+
+    # Anthropic (cloud, paid)
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-sonnet-5"
+
 
 settings = Settings()

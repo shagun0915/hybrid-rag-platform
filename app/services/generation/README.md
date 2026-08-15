@@ -1,4 +1,6 @@
-# Generation service — built Day 3 onward
+# Generation service — baseline built Day 3 ✅
 
-LLM answer generation from retrieved context. Citation verification
-layer added in v2.
+Claude generates answers grounded in retrieved chunks only, with an
+explicit instruction to say so when context is insufficient rather than
+guess. Citation verification layer (claim-level, not just "trust the
+model's excerpt reference") is a v2 addition.

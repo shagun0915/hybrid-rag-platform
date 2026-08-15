@@ -13,7 +13,7 @@ from fastapi import FastAPI
 
 from app.core.config import settings
 from app.core.database import init_db
-from app.api import health, documents
+from app.api import health, documents, query
 
 
 @asynccontextmanager
@@ -29,6 +29,7 @@ app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
 app.include_router(health.router)
 app.include_router(documents.router)
+app.include_router(query.router)
 
 
 @app.get("/")

@@ -21,6 +21,8 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql+asyncpg://rag_user:rag_password@db:5432/rag_platform
     depends_on:

@@ -111,11 +111,34 @@ curl http://localhost:8000/documents/{document_id}/chunks
 First upload will be slower than subsequent ones — the embedding model
 (~130MB) downloads once on first use and is cached after that.
 
+## API — Day 3 additions
+
+```bash
+# Ask a question — retrieves the most relevant chunks via pgvector
+# cosine similarity, then asks the configured LLM to answer using
+# only that context
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What experience does this person have with Dynamics 365?"}'
+```
+
+Response includes both the generated answer and the source chunks it was
+grounded in (filename, similarity score, content preview) — so you can
+verify *why* the model said what it said, not just trust it blindly.
+
+**LLM provider is swappable** via `LLM_PROVIDER` in `.env`:
+- `ollama` (default) — free, runs locally via [Ollama](https://ollama.com), no API key or billing needed. Requires the Ollama app running on your machine with a model pulled (`ollama pull llama3.1:8b`).
+- `anthropic` — real Claude, requires `ANTHROPIC_API_KEY` and an Anthropic account with billing set up.
+
+Both providers are grounded with the same system prompt and go through
+the identical `/query` endpoint — switching is a one-line `.env` change,
+no code changes.
+
 ## Roadmap
 
 - [x] **Day 1** — Repo structure, FastAPI skeleton, Postgres+pgvector via Docker, health checks
 - [x] **Day 2** — Document ingestion: parsing (.txt/.md/.pdf), chunking, embeddings (fastembed/bge-small), storage in pgvector
-- [ ] **Day 3** — Baseline RAG: vector retrieval -> LLM -> answer
+- [x] **Day 3** — Baseline RAG: pgvector cosine-similarity retrieval -> Claude generation -> grounded answer with sources
 - [ ] **Day 4** — Hybrid retrieval: BM25 + vector fusion
 - [ ] **Day 5** — Cross-encoder reranking + agentic query reformulation
 - [ ] **Day 6** — Evaluation: golden dataset, Recall@K, MRR, faithfulness

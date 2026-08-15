@@ -1,4 +1,5 @@
-# Retrieval service — built Days 3-5
+# Retrieval service — Day 3 baseline built ✅, Days 4-5 pending
 
-Baseline vector search (Day 3) → hybrid (vector + BM25) search (Day 4) →
-cross-encoder reranking + agentic query reformulation (Day 5).
+Day 3: baseline vector search via pgvector cosine similarity (done).
+Day 4: hybrid (vector + BM25) search — pending.
+Day 5: cross-encoder reranking + agentic query reformulation — pending.
