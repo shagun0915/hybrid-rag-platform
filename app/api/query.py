@@ -1,19 +1,18 @@
 """
-The baseline RAG loop, end to end:
+The RAG loop, end to end:
 
   question
     -> embed (same model as ingestion — this MUST match, otherwise the
        query vector and the stored chunk vectors live in incompatible
        spaces and "nearest neighbor" becomes meaningless)
-    -> vector_search (nearest chunks in pgvector)
+    -> hybrid_search (vector search + keyword search, fused via RRF —
+       Day 4; was pure vector search only through Day 3)
     -> generate_answer (LLM, grounded in those chunks only)
     -> answer + sources
 
-This is intentionally the simplest version that could work — no hybrid
-search, no reranking, no agentic retry, no citation verification. Those
-come Days 4-9. Today's job is: prove the core loop produces a real,
-grounded answer at all. Everything after this is quality improvements on
-top of a working foundation.
+Reranking, agentic query reformulation, and citation verification come
+Days 5-9. Today's addition: retrieval no longer misses exact-term matches
+(names, IDs, specific phrases) that pure semantic search can gloss over.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -23,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.services.ingestion.embedder import embed_texts
-from app.services.retrieval.vector_search import vector_search
+from app.services.retrieval.hybrid_search import hybrid_search
 from app.services.generation.answer import generate_answer, MissingAPIKeyError
 
 router = APIRouter(prefix="/query", tags=["query"])
@@ -41,7 +40,7 @@ async def query(request: QueryRequest, db: AsyncSession = Depends(get_db)):
     # Same embedding model as ingestion, on purpose — see module docstring.
     [query_vector] = await embed_texts([request.question])
 
-    chunks = await vector_search(db, query_vector, top_k=top_k)
+    chunks = await hybrid_search(db, request.question, query_vector, top_k=top_k)
 
     try:
         answer = await generate_answer(request.question, chunks)
@@ -57,7 +56,7 @@ async def query(request: QueryRequest, db: AsyncSession = Depends(get_db)):
             {
                 "filename": c["filename"],
                 "chunk_index": c["chunk_index"],
-                "similarity_score": c["similarity_score"],
+                "fusion_score": c.get("fusion_score"),
                 "content_preview": c["content"][:200] + ("..." if len(c["content"]) > 200 else ""),
             }
             for c in chunks

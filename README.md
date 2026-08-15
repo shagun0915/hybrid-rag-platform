@@ -134,12 +134,34 @@ Both providers are grounded with the same system prompt and go through
 the identical `/query` endpoint — switching is a one-line `.env` change,
 no code changes.
 
+## API — Day 4 changes
+
+`/query` now uses **hybrid retrieval** instead of pure vector search:
+vector (semantic) search and keyword (lexical, via Postgres full-text
+search) run independently, then get merged via Reciprocal Rank Fusion.
+Response `sources` now show `fusion_score` instead of `similarity_score`.
+
+No request/response shape changes beyond that field rename — same
+endpoint, same usage:
+
+```bash
+curl -X POST http://localhost:8000/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What experience does this person have with Dynamics 365?"}'
+```
+
+Why this matters in practice: pure vector search can miss exact-term
+queries (a specific product name, an ID, an acronym) because those don't
+carry rich semantic meaning the way a full sentence does. Keyword search
+catches exactly that case. Neither approach is strictly better — that's
+the whole justification for fusing both rather than picking one.
+
 ## Roadmap
 
 - [x] **Day 1** — Repo structure, FastAPI skeleton, Postgres+pgvector via Docker, health checks
 - [x] **Day 2** — Document ingestion: parsing (.txt/.md/.pdf), chunking, embeddings (fastembed/bge-small), storage in pgvector
-- [x] **Day 3** — Baseline RAG: pgvector cosine-similarity retrieval -> Claude generation -> grounded answer with sources
-- [ ] **Day 4** — Hybrid retrieval: BM25 + vector fusion
+- [x] **Day 3** — Baseline RAG: pgvector cosine-similarity retrieval -> swappable Ollama/Claude generation -> grounded answer with sources
+- [x] **Day 4** — Hybrid retrieval: vector + Postgres full-text search, fused via Reciprocal Rank Fusion
 - [ ] **Day 5** — Cross-encoder reranking + agentic query reformulation
 - [ ] **Day 6** — Evaluation: golden dataset, Recall@K, MRR, faithfulness
 - [ ] **Day 7** — Deployment, docs, architecture polish
