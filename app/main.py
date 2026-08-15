@@ -10,6 +10,7 @@ a bug is in your retrieval logic or in the plumbing underneath it.
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import init_db
@@ -38,4 +39,11 @@ async def root():
         "app": settings.app_name,
         "environment": settings.environment,
         "docs": "/docs",
+        "demo_ui": "/ui",
     }
+
+
+# Demo UI — served directly by this same API (no separate frontend
+# service, no CORS to configure). Mounted last so it doesn't shadow any
+# API route above it. Visiting /ui serves app/static/index.html.
+app.mount("/ui", StaticFiles(directory="app/static", html=True), name="ui")

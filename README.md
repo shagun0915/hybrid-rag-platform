@@ -59,6 +59,15 @@ curl -X POST http://localhost:8000/query \
   -d '{"question": "What does this document say about X?"}'
 ```
 
+Or skip curl entirely — a demo UI is included:
+
+**http://localhost:8000/ui**
+
+Upload documents, ask questions, and watch the actual retrieval trace —
+hybrid search candidates, rerank scores, and any query reformulation —
+rendered live, not just described. This is the fastest way to see the
+system actually working, including the agentic retry loop in action.
+
 Run the evaluation suite against the live system:
 
 ```bash
@@ -114,7 +123,9 @@ search on the same table, no second database to stand up.
 
 ```
 app/
-  main.py                 FastAPI entrypoint
+  main.py                 FastAPI entrypoint, also mounts /ui (demo frontend)
+  static/
+    index.html              Demo UI — visualizes the retrieval trace live
   core/
     config.py              Typed settings — nothing hard-coded, every
                             tunable (chunk size, retrieval K, rerank
@@ -311,6 +322,7 @@ moving to the next:
 - **Day 7** — Deployment guidance, README consolidation, `.dockerignore`, API healthcheck, LICENSE.
 - **v2 follow-up (semantic chunking)** — Replaced fixed word-count chunking with embedding-similarity-based sentence grouping, fixing the fact/context-separation cause of the SonarQube limitation. Swappable via `CHUNKING_STRATEGY`, not a forced rewrite.
 - **v2 follow-up (candidate-pool visibility + honest re-diagnosis)** — Re-tested the fix against the real system rather than assuming it worked; found the same query still initially failed for a *different* reason (corpus imbalance at the hybrid-search stage, not chunking). Added `pre_rerank_candidates` logging to distinguish "never retrieved" from "retrieved but reranked out." Discovered the Day 5 agentic retry loop — not the chunking fix — was what actually recovered a correct answer. See Known Limitations for the full trace.
+- **v2 follow-up (demo UI)** — Added a frontend at `/ui`, served directly by the same FastAPI app (no separate service, no CORS to configure). Signature feature is a live retrieval-trace visualization — candidate score bars, confidence tags, and the reformulation step rendered visibly — rather than a generic chat window, so the agentic retry loop is something you can watch happen, not just read about.
 
 ## v2 roadmap (deferred, not built)
 

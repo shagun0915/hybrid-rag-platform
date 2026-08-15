@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hybrid RAG Platform — Demo Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #F6F7F9;
+    --surface: #FFFFFF;
+    --ink: #14181D;
+    --ink-soft: #5B6472;
+    --ink-faint: #8A93A0;
+    --line: #DFE3E8;
+    --teal: #0E6E5C;
+    --teal-soft: rgba(14,110,92,0.08);
+    --amber: #C0631B;
+    --amber-soft: rgba(192,99,27,0.08);
+    --red: #B3261E;
+    --red-soft: rgba(179,38,30,0.08);
+    --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --display: 'Space Grotesk', var(--sans);
+    --mono: 'IBM Plex Mono', 'SFMono-Regular', Menlo, monospace;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a{ color: var(--teal); }
+  ::selection{ background: var(--teal); color: #fff; }
+
+  *:focus-visible{
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  .wrap{ max-width: 920px; margin: 0 auto; padding: 0 20px; }
+
+  header.top{
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    padding: 22px 0;
+  }
+  .top-inner{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .brand{ display:flex; align-items:baseline; gap:10px; }
+  .brand h1{
+    font-family: var(--display);
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .brand span.tag{
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+  .badges{ display:flex; gap:8px; flex-wrap:wrap; }
+  .badge{
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    background: var(--paper);
+  }
+  .badge a{ color: inherit; text-decoration: none; }
+  .badge a:hover{ color: var(--teal); }
+
+  main{ padding: 32px 0 80px; }
+
+  .panel{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+  .panel-title{
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 15px;
+    margin: 0 0 4px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .panel-sub{
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 16px;
+  }
+
+  /* documents */
+  .doc-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding: 9px 0;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+  }
+  .doc-row:first-of-type{ border-top: none; }
+  .doc-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+  .doc-meta{ display:flex; align-items:center; gap:10px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); flex-shrink:0; }
+  .status-pill{
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .status-ready{ background: var(--teal-soft); color: var(--teal); }
+  .status-processing, .status-uploaded{ background: var(--amber-soft); color: var(--amber); }
+  .status-failed{ background: var(--red-soft); color: var(--red); }
+  .empty-note{ font-size: 13px; color: var(--ink-faint); padding: 6px 0; }
+
+  .upload-row{ display:flex; gap:10px; margin-top: 14px; flex-wrap:wrap; }
+  input[type="file"]{
+    font-family: var(--sans);
+    font-size: 13px;
+    flex: 1;
+    min-width: 180px;
+  }
+  button{
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 9px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  button:hover:not(:disabled){ background: var(--teal); }
+  button:disabled{ opacity: 0.45; cursor: not-allowed; }
+  button.ghost{
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line);
+  }
+  button.ghost:hover:not(:disabled){ border-color: var(--teal); color: var(--teal); background: transparent; }
+
+  /* query */
+  .query-row{ display:flex; gap:10px; }
+  textarea{
+    flex: 1;
+    font-family: var(--sans);
+    font-size: 14.5px;
+    padding: 11px 13px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    resize: vertical;
+    min-height: 46px;
+    background: var(--paper);
+  }
+
+  .status-line{
+    display:flex; align-items:center; gap:8px;
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink-soft);
+    margin-top: 12px;
+  }
+  .spinner{
+    width: 13px; height: 13px;
+    border: 2px solid var(--line);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  .error-box{
+    background: var(--red-soft);
+    border: 1px solid rgba(179,38,30,0.25);
+    color: var(--red);
+    border-radius: 7px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    margin-top: 12px;
+  }
+
+  /* retrieval trace — the signature element */
+  .trace-attempt{
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .trace-head{
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    margin-bottom: 10px;
+  }
+  .trace-label{
+    font-family: var(--mono); font-size: 11.5px; text-transform:uppercase; letter-spacing:0.05em; color: var(--ink-faint);
+  }
+  .trace-query{
+    font-size: 13.5px;
+    color: var(--ink);
+    font-style: italic;
+  }
+  .trace-score{
+    display:flex; align-items:center; gap:8px;
+  }
+  .trace-score b{
+    font-family: var(--mono); font-size: 17px; font-weight:500;
+  }
+  .conf-yes{ color: var(--teal); }
+  .conf-no{ color: var(--amber); }
+  .conf-tag{
+    font-family: var(--mono); font-size: 10px; text-transform:uppercase;
+    padding: 2px 7px; border-radius: 20px;
+  }
+  .conf-tag.yes{ background: var(--teal-soft); color: var(--teal); }
+  .conf-tag.no{ background: var(--amber-soft); color: var(--amber); }
+
+  .cand-list{ margin-top: 10px; }
+  .cand-row{
+    display:grid;
+    grid-template-columns: 1fr 90px 52px;
+    align-items:center;
+    gap: 10px;
+    padding: 4px 0;
+    font-family: var(--mono);
+    font-size: 11.5px;
+  }
+  .cand-name{ color: var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cand-bar-track{ height: 6px; background: var(--paper); border-radius: 4px; overflow:hidden; }
+  .cand-bar-fill{ height: 100%; background: var(--ink-faint); border-radius: 4px; transition: width .5s ease; }
+  .cand-score{ text-align:right; color: var(--ink-faint); }
+
+  .retry-arrow{
+    text-align:center;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--amber);
+    padding: 4px 0 12px;
+  }
+
+  /* answer */
+  .answer-text{
+    font-size: 15.5px;
+    line-height: 1.65;
+    padding: 4px 0 18px;
+  }
+  .source-card{
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .source-head{
+    display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom: 5px;
+  }
+  .source-file{ font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+  .source-score{ font-family: var(--mono); font-size: 12px; color: var(--teal); font-weight:500; }
+  .source-preview{ font-size: 13px; color: var(--ink-soft); }
+
+  details.raw{ margin-top: 16px; }
+  details.raw summary{
+    font-family: var(--mono); font-size: 12px; color: var(--ink-faint); cursor: pointer;
+  }
+  details.raw pre{
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 12px;
+    font-size: 11.5px;
+    overflow-x: auto;
+    margin-top: 8px;
+    font-family: var(--mono);
+    color: var(--ink-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+  @media (max-width: 560px){
+    .cand-row{ grid-template-columns: 1fr 60px 44px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-inner">
+    <div class="brand">
+      <h1>Hybrid RAG Platform</h1>
+      <span class="tag">demo console</span>
+    </div>
+    <div class="badges">
+      <span class="badge">Hybrid retrieval + reranking + agentic retry</span>
+      <span class="badge"><a href="https://github.com/shagun0915/hybrid-rag-platform" target="_blank" rel="noopener">Source ↗</a></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="panel">
+    <p class="panel-title">Documents</p>
+    <p class="panel-sub">Upload a PDF, Markdown, or text file to add it to the corpus.</p>
+    <div id="docList"><p class="empty-note">Loading documents…</p></div>
+    <div class="upload-row">
+      <input type="file" id="fileInput" accept=".pdf,.txt,.md" />
+      <button id="uploadBtn">Upload</button>
+    </div>
+    <div id="uploadStatus"></div>
+  </section>
+
+  <section class="panel">
+    <p class="panel-title">Ask a question</p>
+    <p class="panel-sub">Answers are grounded only in what's been uploaded — the system says so when it doesn't know.</p>
+    <div class="query-row">
+      <textarea id="questionInput" placeholder="What was the Rank-1 accuracy in the fingerprint recognition research?"></textarea>
+      <button id="askBtn">Ask</button>
+    </div>
+    <div id="queryStatus"></div>
+  </section>
+
+  <section class="panel" id="tracePanel" style="display:none;">
+    <p class="panel-title">Retrieval trace</p>
+    <p class="panel-sub">What the system actually tried — hybrid search candidates, rerank scores, and any query reformulation.</p>
+    <div id="traceBody"></div>
+  </section>
+
+  <section class="panel" id="answerPanel" style="display:none;">
+    <p class="panel-title">Answer</p>
+    <div id="answerBody"></div>
+    <p class="panel-title" style="margin-top:8px;">Sources</p>
+    <div id="sourcesBody"></div>
+    <details class="raw">
+      <summary>View raw API response</summary>
+      <pre id="rawJson"></pre>
+    </details>
+  </section>
+
+</main>
+
+<script>
+  const CONFIDENCE_THRESHOLD = 0.5; // mirrors backend default MIN_RERANK_SCORE
+
+  async function loadDocuments(){
+    const el = document.getElementById('docList');
+    try{
+      const res = await fetch('/documents');
+      const docs = await res.json();
+      if(!docs.length){
+        el.innerHTML = '<p class="empty-note">No documents uploaded yet.</p>';
+        return;
+      }
+      el.innerHTML = docs.map(d => `
+        <div class="doc-row">
+          <span class="doc-name">${escapeHtml(d.filename)}</span>
+          <span class="doc-meta">
+            <span>${d.chunk_count ?? 0} chunks</span>
+            <span class="status-pill status-${d.status}">${d.status}</span>
+          </span>
+        </div>
+      `).join('');
+    }catch(err){
+      el.innerHTML = '<p class="empty-note">Could not reach the API. Is the backend running?</p>';
+    }
+  }
+
+  document.getElementById('uploadBtn').addEventListener('click', async () => {
+    const input = document.getElementById('fileInput');
+    const statusEl = document.getElementById('uploadStatus');
+    const btn = document.getElementById('uploadBtn');
+    if(!input.files.length){
+      statusEl.innerHTML = '<div class="error-box">Choose a file first.</div>';
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', input.files[0]);
+    btn.disabled = true;
+    statusEl.innerHTML = '<div class="status-line"><span class="spinner"></span> Uploading and processing…</div>';
+    try{
+      const res = await fetch('/documents/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if(!res.ok){
+        statusEl.innerHTML = `<div class="error-box">${escapeHtml(data.detail || 'Upload failed.')}</div>`;
+      } else {
+        statusEl.innerHTML = '';
+        input.value = '';
+        await loadDocuments();
+      }
+    }catch(err){
+      statusEl.innerHTML = '<div class="error-box">Could not reach the API.</div>';
+    }
+    btn.disabled = false;
+  });
+
+  document.getElementById('askBtn').addEventListener('click', async () => {
+    const q = document.getElementById('questionInput').value.trim();
+    const askBtn = document.getElementById('askBtn');
+    const statusEl = document.getElementById('queryStatus');
+    const tracePanel = document.getElementById('tracePanel');
+    const answerPanel = document.getElementById('answerPanel');
+
+    if(!q){
+      statusEl.innerHTML = '<div class="error-box">Type a question first.</div>';
+      return;
+    }
+
+    askBtn.disabled = true;
+    tracePanel.style.display = 'none';
+    answerPanel.style.display = 'none';
+    statusEl.innerHTML = '<div class="status-line"><span class="spinner"></span> Retrieving and generating — this can take a while on a local model…</div>';
+
+    try{
+      const res = await fetch('/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q }),
+      });
+      const data = await res.json();
+      statusEl.innerHTML = '';
+
+      if(!res.ok){
+        statusEl.innerHTML = `<div class="error-box">${escapeHtml(data.detail || 'Something went wrong.')}</div>`;
+        askBtn.disabled = false;
+        return;
+      }
+
+      renderTrace(data.retrieval_debug ? data.retrieval_debug.attempts : []);
+      renderAnswer(data);
+
+      document.getElementById('rawJson').textContent = JSON.stringify(data, null, 2);
+      tracePanel.style.display = 'block';
+      answerPanel.style.display = 'block';
+    }catch(err){
+      statusEl.innerHTML = '<div class="error-box">Could not reach the API.</div>';
+    }
+    askBtn.disabled = false;
+  });
+
+  function renderTrace(attempts){
+    const body = document.getElementById('traceBody');
+    if(!attempts || !attempts.length){
+      body.innerHTML = '<p class="empty-note">No retrieval attempts recorded.</p>';
+      return;
+    }
+    let html = '';
+    attempts.forEach((a, i) => {
+      const score = a.top_rerank_score;
+      const confident = score !== null && score >= CONFIDENCE_THRESHOLD;
+      const candidates = a.pre_rerank_candidates || [];
+      const maxScore = Math.max(...candidates.map(c => c.fusion_score || 0), 0.0001);
+
+      html += `<div class="trace-attempt">
+        <div class="trace-head">
+          <div>
+            <span class="trace-label">Attempt ${a.attempt}</span><br>
+            <span class="trace-query">"${escapeHtml(a.query)}"</span>
+          </div>
+          <div class="trace-score">
+            <b class="${confident ? 'conf-yes' : 'conf-no'}">${score !== null ? score.toFixed(4) : '—'}</b>
+            <span class="conf-tag ${confident ? 'yes' : 'no'}">${confident ? 'confident' : 'below threshold'}</span>
+          </div>
+        </div>
+        <div class="cand-list">
+          ${candidates.slice(0, 6).map(c => `
+            <div class="cand-row">
+              <span class="cand-name">${escapeHtml(c.filename)} · chunk ${c.chunk_index}</span>
+              <span class="cand-bar-track"><span class="cand-bar-fill" style="width:${Math.round((c.fusion_score||0)/maxScore*100)}%"></span></span>
+              <span class="cand-score">${(c.fusion_score||0).toFixed(4)}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+
+      if(i < attempts.length - 1){
+        html += '<div class="retry-arrow">↓ below confidence threshold — query reformulated, retrying ↓</div>';
+      }
+    });
+    body.innerHTML = html;
+  }
+
+  function renderAnswer(data){
+    document.getElementById('answerBody').innerHTML =
+      `<div class="answer-text">${escapeHtml(data.answer)}</div>`;
+
+    const sources = data.sources || [];
+    const sourcesEl = document.getElementById('sourcesBody');
+    if(!sources.length){
+      sourcesEl.innerHTML = '<p class="empty-note">No sources returned.</p>';
+      return;
+    }
+    sourcesEl.innerHTML = sources.map(s => `
+      <div class="source-card">
+        <div class="source-head">
+          <span class="source-file">${escapeHtml(s.filename)} · chunk ${s.chunk_index}</span>
+          <span class="source-score">${s.rerank_score !== undefined && s.rerank_score !== null ? s.rerank_score.toFixed(4) : ''}</span>
+        </div>
+        <div class="source-preview">${escapeHtml(s.content_preview || '')}</div>
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(str){
+    if(str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  loadDocuments();
+</script>
+
+</body>
+</html>
