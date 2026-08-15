@@ -173,8 +173,9 @@ Every tunable lives in `.env` (copy from `.env.example`):
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `LLM_PROVIDER` | `ollama` | `ollama` (free/local) or `anthropic` (paid/cloud) |
+| `LLM_PROVIDER` | `ollama` | `ollama` (free/local), `groq` (free/cloud), or `anthropic` (paid/cloud) |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Local model, if using Ollama |
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Cloud model, if using Groq — free, no credit card |
 | `ANTHROPIC_MODEL` | `claude-sonnet-5` | Cloud model, if using Anthropic |
 | `EMBEDDING_DIMENSION` | `384` | Must match the embedding model's actual output size |
 | `CHUNKING_STRATEGY` | `semantic` | `semantic` (sentence-similarity based) or `fixed` (word-count based) |
@@ -339,8 +340,20 @@ Re-running the same 11-question suite three times produced different
 pass/fail results on two borderline questions — not from retrieval
 changing, but from Ollama's `llama3.1:8b` phrasing answers differently
 run to run given weakly-ranked context. A genuine tradeoff of the
-free/local provider path; a larger model would likely show less
-variance on the same borderline evidence (not directly A/B tested here).
+free/local provider path.
+
+**Update — the A/B test flagged above as not yet run has now been run.**
+Adding Groq as a third provider (see Deployment) made a direct,
+same-corpus, same-question comparison possible: the exact VAMP question
+that failed against `llama3.1:8b` across three separate attempts and
+investigation angles (flat denial, hedged misattribution, reformulation
+guessing the wrong domain — see the case studies below) was asked again,
+unchanged, against Groq's `llama-3.3-70b-versatile`. Result: *"The full
+form of VAMP is Visa Acquirer Monitoring Program (Excerpt 1)"* — correct,
+confident, properly cited, first attempt, no reformulation needed. Same
+retrieval pipeline, same chunk, same citation format — the only variable
+that changed was model size. This confirms the earlier prediction rather
+than just asserting it.
 
 ### A third case: retrieval worked correctly, but the model still couldn't answer confidently
 
@@ -440,24 +453,86 @@ currently passed to `reformulate_query()`.
 
 ## Deployment
 
-This runs as a local Docker Compose stack by design — that's honest
-about what was actually built and verified this week, rather than
-claiming a live public deployment that wasn't. For a public-facing demo:
+**Recommended host: [Koyeb](https://koyeb.com)** — a genuinely free tier
+(no credit card, doesn't expire) that hosts both a Docker web service
+*and* a managed Postgres database with pgvector support, on a single
+platform. No splitting your stack across two providers.
 
-- **LLM provider:** switch `LLM_PROVIDER=anthropic` — Ollama isn't
-  practical on most free cloud tiers (no GPU, limited RAM), while
-  Anthropic's API works from anywhere with a key.
-- **Host options that support multi-container Docker Compose-style
-  deploys with a Postgres add-on:** Railway, Render, or Fly.io all have
-  free/cheap tiers suitable for a portfolio-scale project like this —
-  each needs a real account and a bit of platform-specific config
-  (mainly: point `DATABASE_URL` at their managed Postgres, ensure the
-  `vector` extension is enabled there, and set `ANTHROPIC_API_KEY`).
-- **Simpler alternative:** keep this as a local-only project and record
-  a short demo (screen capture of the `/docs` UI or a few `curl`
-  examples) for your portfolio — genuinely sufficient for demonstrating
-  the engineering to a recruiter or interviewer without the added
-  surface area of managing a live public deployment.
+**LLM provider for the public deployment: `LLM_PROVIDER=groq`.** Ollama
+can't run on a 512MB free instance (an 8B-parameter model needs several
+GB of RAM). Anthropic works but requires paid credits. Groq is free
+(no credit card, not a trial) and OpenAI-compatible — get a key at
+[console.groq.com/keys](https://console.groq.com/keys).
+
+**Honest resource caveat:** the free tier gives 0.1 vCPU / 512MB RAM —
+meaningfully less than local dev. `fastembed`'s embedding model and the
+cross-encoder reranker both load into memory; this may run fine, or may
+be genuinely too tight. Not verified end-to-end at time of writing —
+stated plainly rather than promised.
+
+### Steps
+
+1. **Push this repo to GitHub** if it isn't already (Koyeb deploys from
+   a Git repo or a container registry).
+
+2. **Create a Koyeb account** at [koyeb.com](https://koyeb.com) — email
+   or GitHub login, no card required.
+
+3. **Provision the database first.** In the Koyeb dashboard, create a
+   PostgreSQL database instance. Once it's up, note the connection
+   string — you'll set this as `DATABASE_URL` on the API service. The
+   app enables the `vector` extension itself at startup
+   (`CREATE EXTENSION IF NOT EXISTS vector` in `database.py`) — no
+   manual SQL needed, assuming the extension is available on Koyeb's
+   Postgres (documented as supporting 40+ extensions including pgvector
+   at time of writing — worth confirming against their current docs
+   before relying on it).
+
+4. **Create the web service** from this GitHub repo, choosing Dockerfile
+   build (not buildpack — this project has one already). Set the
+   exposed port to `8000` to match the Dockerfile.
+
+5. **Set environment variables** on the service (same names as
+   `.env.example`):
+   ```
+   DATABASE_URL=<the connection string from step 3>
+   LLM_PROVIDER=groq
+   GROQ_API_KEY=<your free key from console.groq.com/keys>
+   GROQ_MODEL=llama-3.3-70b-versatile
+   CHUNKING_STRATEGY=semantic
+   ```
+   (Retrieval/reranking/expansion settings can be left at their
+   `config.py` defaults unless you want to tune them.)
+
+6. **Deploy.** Koyeb builds the Dockerfile and gives you a live URL
+   ending in `.koyeb.app`.
+
+7. **Verify it's actually working**, don't just assume:
+   ```bash
+   curl https://<your-app>.koyeb.app/health/ready
+   ```
+   Looking for `{"status":"ok","database":"connected"}`. Then open
+   `https://<your-app>.koyeb.app/ui` — same demo interface as local,
+   now with a shareable public link.
+
+8. **Re-upload your documents** — the deployed database starts empty;
+   local uploads don't transfer automatically.
+
+### If resource limits turn out to be too tight
+
+If the free instance struggles (slow responses, timeouts, out-of-memory
+errors) — a real possibility at 512MB, not hidden here — two honest
+options: upgrade to Koyeb's smallest paid tier (usually a few dollars/
+month), or fall back to the simpler alternative below.
+
+### Simpler alternative
+
+Keep this as a local-only project and record a short demo (screen
+capture of `/ui` showing the retrieval trace live, or a walkthrough of
+the `/docs` API explorer) for your portfolio. Genuinely sufficient for
+demonstrating the engineering to a recruiter or interviewer — the
+retrieval trace UI was built specifically to make this compelling
+without needing a live public deployment.
 
 ## Build journal
 
@@ -477,6 +552,7 @@ moving to the next:
 - **v2 follow-up (third case study — generation-side failure)** — Using the demo UI on a newly uploaded document, found a case where the system incorrectly denied knowing an answer. Initial hypothesis (same retrieval-miss pattern as the SonarQube case) was checked against real chunk data and found to be **wrong** — retrieval had actually worked correctly. Isolated the real cause via a direct, RAG-pipeline-free test against Ollama: a precision/attribution weakness in the free local model, made measurably worse by the production prompt's added structure. See Known Limitations for the full trace.
 - **v2 follow-up (query expansion)** — Built the fix documented for the corpus-imbalance limitation: every retrieval attempt now searches with the literal question plus a couple of LLM-generated paraphrased variants, fused together via the existing RRF logic (reused, not rewritten). Verified the core mechanism with a controlled simulation — a chunk absent from the literal query's own results still surfaced at rank 2 of 4 after fusion, given real, checkable numbers. Wired into the demo UI's retrieval trace so every phrasing searched is visible live, not just described.
 - **v2 follow-up (fourth case study — reformulation guessing wrong domains)** — Re-tested the VAMP case live with query expansion enabled. Confirmed the fix worked at the retrieval stage (the right chunk moved from a weak, unreliable score to the top of the candidate pool) and independently confirmed the reranker weakness (still scored below threshold despite leading retrieval). Also surfaced a new failure mode along the way: query reformulation guessed a specific, wrong domain for an ambiguous acronym ("VAMP" → biology terms) instead of refining the actual question, making the retry worse than the original attempt. Grounding still held — no hallucinated answer — but a real opportunity was lost. Root-caused to `reformulate_query()` having no visibility into the corpus it's supposedly helping search.
+- **v2 follow-up (Groq provider + deployment guide)** — Added Groq as a third LLM provider (free, cloud, no credit card, OpenAI-compatible — same `httpx` pattern as the Ollama integration, no new SDK dependency) specifically to make a public deployment possible without needing paid Anthropic credits. Wrote concrete deployment steps for Koyeb (free Docker + Postgres/pgvector hosting on one platform), stated honestly where the free tier's resource limits are unverified rather than promising it'll definitely work.
 
 ## v2 roadmap (deferred, not built)
 
