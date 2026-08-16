@@ -403,7 +403,7 @@ failure mode is a natural next test, not yet run here due to API
 billing constraints at the time — noted as an open question rather than
 silently skipped.
 
-### A fourth case: query reformulation guessed the wrong domain entirely
+### A fourth case: query reformulation guessed the wrong domain — found, fixed, and verified live
 
 Re-running the VAMP question with query expansion enabled surfaced a new
 failure mode, not the one being tested for. Attempt 1 (with expansion)
@@ -431,21 +431,39 @@ back on the model's own general-knowledge guess about what the acronym
 *probably* means, which has nothing to do with what's actually been
 uploaded.
 
-**Fix, now built:** `reformulate_query()` (`query_reformulation.py`) now
-accepts the previous attempt's actual retrieved candidates — even the
-low-scoring ones — and includes short content snippets from them in the
+**Fix, now built and confirmed live** — not just unit tested.
+`reformulate_query()` (`query_reformulation.py`) now accepts the
+previous attempt's actual retrieved candidates — even the low-scoring
+ones — and includes short content snippets from them in the
 reformulation prompt, explicitly instructing the model to base its
 rewrite on what's really in the corpus rather than guessing an unrelated
-meaning for an ambiguous term. Verified with a regression test built
-directly from this real case: given the actual VAMP definition sentence
-as a "found but low-scoring" candidate, the grounded prompt correctly
-surfaces "Visa Acquirer Monitoring Program" in its context block — and
-critically, never reproduces the original wrong guess ("Vascular...").
-The data needed for this fix already existed in the loop (attempt 1's
-own candidates); it just wasn't being passed to the reformulation call
-before. A live re-test of the exact VAMP query with this fix deployed
-would be the natural next confirmation — not yet re-run at time of
-writing, stated plainly rather than claimed.
+meaning for an ambiguous term. The data needed for this fix already
+existed in the loop (attempt 1's own candidates); it just wasn't being
+passed to the reformulation call before.
+
+Verified two ways. First, a regression test built directly from this
+real case: given the actual VAMP definition sentence as a "found but
+low-scoring" candidate, the grounded prompt correctly surfaces "Visa
+Acquirer Monitoring Program" and never reproduces the old wrong guess.
+Second, re-running the exact live query against the real system:
+
+- **Attempt 1** (same as before the fix): `"What is full form of VAMP"`
+  → `0.0276`, below threshold, same starting point as the original bug.
+- **Attempt 2, before this fix** (original case study): reformulated to
+  *"Define VAMP in medical terminology"* → variants like "Vascular
+  Adhesion Molecule" — a wrong domain, guessed from nothing.
+- **Attempt 2, after this fix**: reformulated to *"VAMP acronym
+  expansion in context of **VERC VAMP Remediation Portal** or **ERP VAMP
+  Remediation Forms**"* — those exact phrases are lifted directly from
+  chunk 0's real title and metadata table, present in attempt 1's own
+  candidate pool. Not a guess — genuinely grounded in the corpus. Score:
+  **`0.9832`**, correctly retrieving chunk 0 and producing *"The full
+  form of VAMP is Visa Acquirer Monitoring Program (Excerpt 1)"* —
+  correct, confident, properly cited.
+
+A complete before/after trace of the same bug, same question, same
+corpus: wrong-domain guess replaced with a real, grounded rewrite that
+directly recovered the correct answer.
 
 ### Other documented tradeoffs (noted inline in code)
 
@@ -628,7 +646,7 @@ moving to the next:
 - **v2 follow-up (Groq provider + deployment guide)** — Added Groq as a third LLM provider (free, cloud, no credit card, OpenAI-compatible — same `httpx` pattern as the Ollama integration, no new SDK dependency) specifically to make a public deployment possible without needing paid Anthropic credits. Wrote concrete deployment steps for Koyeb (free Docker + Postgres/pgvector hosting on one platform), stated honestly where the free tier's resource limits are unverified rather than promising it'll definitely work.
 - **v2 follow-up (deployment correction)** — Attempted the actual Koyeb deployment and hit a wall: Mistral AI acquired Koyeb in February 2026, and new users can no longer sign up for its free tier. The recommendation was accurate when written days earlier but had gone stale by the time it was acted on — corrected the deployment guide to Render (API) + Supabase (database, pgvector as a first-class feature) once this was discovered, rather than leaving the outdated guidance in place.
 - **v2 follow-up (live deployment, completed)** — Actually deployed to Render + Supabase, hit two real, distinct free-tier CPU limits in sequence (document uploads timing out, then queries timing out), diagnosed each with real evidence (browser DevTools network traces, not guesses), and fixed both: configurable fixed-chunk size to cut embedding calls on upload, and a leaner retrieval configuration (no query expansion, single attempt, narrower candidate pool) to cut reranking cost on query. Verified end-to-end with a real question against the live public URL, correctly answered and cited on the first attempt. The live deployment intentionally runs a reduced configuration compared to local dev — documented as a deliberate, explained tradeoff, not a hidden compromise.
-- **v2 follow-up (grounded reformulation)** — Built the fix identified in the fourth case study: `reformulate_query()` now receives the previous attempt's actual retrieved candidates and includes real corpus snippets in its prompt, so it refines around what's actually present instead of guessing an unrelated domain for an ambiguous term (the "VAMP → Vascular Adhesion Molecule" bug). Verified with a regression test built from the real failing case — the actual VAMP definition text now grounds the prompt correctly, and the test explicitly checks the old wrong guess never reappears.
+- **v2 follow-up (grounded reformulation, fixed and confirmed live)** — Built the fix identified in the fourth case study: `reformulate_query()` now receives the previous attempt's actual retrieved candidates and includes real corpus snippets in its prompt, so it refines around what's actually present instead of guessing an unrelated domain for an ambiguous term (the "VAMP → Vascular Adhesion Molecule" bug). Verified two ways: a regression test built from the real failing case, and a live re-run of the exact original query — reformulation now produces a genuinely grounded rewrite (quoting the real document's actual title text) instead of a wrong-domain guess, and the corrected retrieval jumps from `0.0276` to `0.9832`, recovering the correct, properly-cited answer.
 
 ## v2 roadmap (deferred, not built)
 
