@@ -40,11 +40,22 @@ class Settings(BaseSettings):
     # "semantic" (default) groups sentences by embedding-similarity
     # topic shifts, not fixed word counts — see semantic_chunker.py.
     # "fixed" is the original Day 2 word-count splitter, kept available
-    # for comparison/rollback.
+    # for comparison/rollback, and as the practical choice for CPU-limited
+    # deployments — see fixed_chunk_size_words below.
     chunking_strategy: str = "semantic"
     semantic_similarity_threshold: float = 0.55
     semantic_chunk_max_words: int = 300
     semantic_chunk_min_words: int = 50
+
+    # Fixed-strategy chunk size — tunable per environment. Larger chunks
+    # mean fewer total embedding calls per document, which matters on a
+    # CPU-limited host: a real deployment finding was that a large PDF's
+    # many sequential embedding calls could exceed a free-tier host's
+    # request timeout. Bumping this up (e.g. to 500-600 on a constrained
+    # deployment) trades a little retrieval precision for meaningfully
+    # fewer calls per upload. Local dev can stay at the smaller default.
+    fixed_chunk_size_words: int = 220
+    fixed_chunk_overlap_words: int = 40
 
     # Agentic retrieval (Day 5) — the iteration cap is not optional to
     # set; every agent loop needs one, or a persistently weak query would
