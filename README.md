@@ -5,8 +5,10 @@ agentic query reformulation with a hard iteration cap — built
 incrementally over one week, evaluated against a real golden dataset
 instead of assumed to work.
 
-**Status:** Core system complete and evaluated (Days 1-6). Deployment
-guidance and final polish below (Day 7).
+**Status:** Complete, evaluated, and deployed. Live demo:
+**[hybrid-rag-platform.onrender.com/ui](https://hybrid-rag-platform.onrender.com/ui)**
+(free tier — may take 30-50s to wake up if idle, and runs a leaner
+retrieval config than local dev; see Deployment below for exactly why).
 
 ---
 
@@ -506,13 +508,20 @@ verified end-to-end at time of writing.
    `Dockerfile`, so no buildpack config needed). Set the port to `8000`.
 
 6. **Set environment variables** on the Render service (same names as
-   `.env.example`):
+   `.env.example`). This is the configuration actually verified working
+   on Render's free tier — see "What actually happened on the free
+   tier" below for why it looks different from local dev's defaults:
    ```
    DATABASE_URL=<the Supabase connection string from step 3>
    LLM_PROVIDER=groq
    GROQ_API_KEY=<your free key from console.groq.com/keys>
    GROQ_MODEL=llama-3.3-70b-versatile
-   CHUNKING_STRATEGY=semantic
+   CHUNKING_STRATEGY=fixed
+   FIXED_CHUNK_SIZE_WORDS=600
+   FIXED_CHUNK_OVERLAP_WORDS=80
+   QUERY_EXPANSION_ENABLED=false
+   RETRIEVAL_TOP_K=5
+   MAX_RETRIEVAL_ATTEMPTS=1
    ```
 
 7. **Deploy.** Render builds the Dockerfile and gives you a live URL
@@ -530,12 +539,56 @@ verified end-to-end at time of writing.
 9. **Re-upload your documents** — the deployed database starts empty;
    local uploads don't transfer automatically.
 
-### If resource limits turn out to be too tight
+### What actually happened on the free tier — a real account, not a hypothetical
 
-If the free instance struggles (slow responses, timeouts, out-of-memory
-errors) — a real possibility on a free tier, not hidden here — two
-honest options: upgrade to a paid tier on either platform (a few
-dollars/month), or fall back to the simpler alternative below.
+The section above describes the deployment steps; this describes what
+genuinely occurred when they were followed, including two real failures
+found, diagnosed, and fixed — not smoothed over.
+
+**Upload failures, first.** Documents over a certain size consistently
+returned `502 Bad Gateway` after 20-30+ seconds — confirmed via browser
+DevTools, not guessed. Root cause: semantic chunking embeds every
+sentence individually to detect topic boundaries, and on Render's free
+tier (0.1 vCPU), that many sequential CPU-bound ONNX inference calls
+took long enough to exceed the platform's gateway timeout. Switching to
+`CHUNKING_STRATEGY=fixed` helped but didn't fully solve it for the
+largest documents — the real fix was making fixed-chunk size itself
+configurable (`FIXED_CHUNK_SIZE_WORDS`) and raising it to 600, cutting
+total embedding calls by roughly two-thirds on a research-paper-sized
+document (verified: 50 chunks → 18 chunks for the same text). After
+that, 3 of 4 real documents uploaded successfully; the single largest
+one still occasionally failed — a real, acknowledged boundary of what
+this specific free tier can process in one request, not something
+chased further.
+
+**Query failures, second, after uploads were fixed.** The `/query`
+endpoint itself started 502ing at ~20+ seconds, even on a single
+question. Root cause: with query expansion enabled (searching 3
+phrasings per attempt, up to 2 attempts) and `RETRIEVAL_TOP_K=20`, the
+cross-encoder reranker had to score up to 20 candidates per attempt,
+multiple times — again, CPU-bound work that didn't fit the timeout on
+0.1 vCPU. Fix: for this deployment specifically,
+`QUERY_EXPANSION_ENABLED=false`, `RETRIEVAL_TOP_K=5`, and
+`MAX_RETRIEVAL_ATTEMPTS=1`. **This is a real, deliberate trade — stated
+plainly, not hidden:** the live public deployment runs a leaner
+configuration than local dev. No query expansion, no agentic retry, a
+narrower candidate pool. Local development keeps the fuller
+configuration (wider retrieval, query expansion, the retry loop) since
+compute isn't a constraint there.
+
+**Verified working, with a real example.** After both fixes, asking
+*"what was the rank-1 accuracy of fingerprint detection"* against the
+live deployment returned a confident (`0.8986`), correctly-cited,
+first-attempt answer — `98.49%` for the Vision Transformer, `93.34%`
+for the Sequential CNN, correctly distinguishing them — sourced from the
+actual conclusion section of the uploaded paper. Real evidence the
+reduced-but-real pipeline works end-to-end in production, not just
+locally.
+
+If you hit the same 502s attempting this deployment yourself, the same
+progression — smaller chunks, then fewer candidates and one attempt
+instead of two — is the place to start, not a sign something is broken
+in the code.
 
 ### Simpler alternative
 
@@ -566,6 +619,7 @@ moving to the next:
 - **v2 follow-up (fourth case study — reformulation guessing wrong domains)** — Re-tested the VAMP case live with query expansion enabled. Confirmed the fix worked at the retrieval stage (the right chunk moved from a weak, unreliable score to the top of the candidate pool) and independently confirmed the reranker weakness (still scored below threshold despite leading retrieval). Also surfaced a new failure mode along the way: query reformulation guessed a specific, wrong domain for an ambiguous acronym ("VAMP" → biology terms) instead of refining the actual question, making the retry worse than the original attempt. Grounding still held — no hallucinated answer — but a real opportunity was lost. Root-caused to `reformulate_query()` having no visibility into the corpus it's supposedly helping search.
 - **v2 follow-up (Groq provider + deployment guide)** — Added Groq as a third LLM provider (free, cloud, no credit card, OpenAI-compatible — same `httpx` pattern as the Ollama integration, no new SDK dependency) specifically to make a public deployment possible without needing paid Anthropic credits. Wrote concrete deployment steps for Koyeb (free Docker + Postgres/pgvector hosting on one platform), stated honestly where the free tier's resource limits are unverified rather than promising it'll definitely work.
 - **v2 follow-up (deployment correction)** — Attempted the actual Koyeb deployment and hit a wall: Mistral AI acquired Koyeb in February 2026, and new users can no longer sign up for its free tier. The recommendation was accurate when written days earlier but had gone stale by the time it was acted on — corrected the deployment guide to Render (API) + Supabase (database, pgvector as a first-class feature) once this was discovered, rather than leaving the outdated guidance in place.
+- **v2 follow-up (live deployment, completed)** — Actually deployed to Render + Supabase, hit two real, distinct free-tier CPU limits in sequence (document uploads timing out, then queries timing out), diagnosed each with real evidence (browser DevTools network traces, not guesses), and fixed both: configurable fixed-chunk size to cut embedding calls on upload, and a leaner retrieval configuration (no query expansion, single attempt, narrower candidate pool) to cut reranking cost on query. Verified end-to-end with a real question against the live public URL, correctly answered and cited on the first attempt. The live deployment intentionally runs a reduced configuration compared to local dev — documented as a deliberate, explained tradeoff, not a hidden compromise.
 
 ## v2 roadmap (deferred, not built)
 
