@@ -99,6 +99,9 @@ async def agentic_retrieve(db, question: str) -> dict:
         if _should_stop(top_score, attempt, settings.max_retrieval_attempts, settings.min_rerank_score):
             break
 
-        current_query = await reformulate_query(question)
+        # Ground the reformulation in what was actually found this
+        # attempt (even if it scored too low to be confident) — see
+        # query_reformulation.py's docstring for the real bug this fixes.
+        current_query = await reformulate_query(question, previous_candidates=reranked)
 
     return {"chunks": reranked, "attempts": attempts_log}

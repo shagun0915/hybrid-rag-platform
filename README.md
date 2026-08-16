@@ -431,13 +431,21 @@ back on the model's own general-knowledge guess about what the acronym
 *probably* means, which has nothing to do with what's actually been
 uploaded.
 
-**Real fix (v2, not built):** ground the reformulation prompt in the
-corpus itself — e.g., include a few high-scoring terms or filenames
-from attempt 1's own candidates as context, so reformulation refines
-around what's actually present rather than guessing a domain from
-scratch. A smaller, more contained fix than it sounds: the data needed
-(attempt 1's candidates) already exists in the loop, it just isn't
-currently passed to `reformulate_query()`.
+**Fix, now built:** `reformulate_query()` (`query_reformulation.py`) now
+accepts the previous attempt's actual retrieved candidates — even the
+low-scoring ones — and includes short content snippets from them in the
+reformulation prompt, explicitly instructing the model to base its
+rewrite on what's really in the corpus rather than guessing an unrelated
+meaning for an ambiguous term. Verified with a regression test built
+directly from this real case: given the actual VAMP definition sentence
+as a "found but low-scoring" candidate, the grounded prompt correctly
+surfaces "Visa Acquirer Monitoring Program" in its context block — and
+critically, never reproduces the original wrong guess ("Vascular...").
+The data needed for this fix already existed in the loop (attempt 1's
+own candidates); it just wasn't being passed to the reformulation call
+before. A live re-test of the exact VAMP query with this fix deployed
+would be the natural next confirmation — not yet re-run at time of
+writing, stated plainly rather than claimed.
 
 ### Other documented tradeoffs (noted inline in code)
 
@@ -620,6 +628,7 @@ moving to the next:
 - **v2 follow-up (Groq provider + deployment guide)** — Added Groq as a third LLM provider (free, cloud, no credit card, OpenAI-compatible — same `httpx` pattern as the Ollama integration, no new SDK dependency) specifically to make a public deployment possible without needing paid Anthropic credits. Wrote concrete deployment steps for Koyeb (free Docker + Postgres/pgvector hosting on one platform), stated honestly where the free tier's resource limits are unverified rather than promising it'll definitely work.
 - **v2 follow-up (deployment correction)** — Attempted the actual Koyeb deployment and hit a wall: Mistral AI acquired Koyeb in February 2026, and new users can no longer sign up for its free tier. The recommendation was accurate when written days earlier but had gone stale by the time it was acted on — corrected the deployment guide to Render (API) + Supabase (database, pgvector as a first-class feature) once this was discovered, rather than leaving the outdated guidance in place.
 - **v2 follow-up (live deployment, completed)** — Actually deployed to Render + Supabase, hit two real, distinct free-tier CPU limits in sequence (document uploads timing out, then queries timing out), diagnosed each with real evidence (browser DevTools network traces, not guesses), and fixed both: configurable fixed-chunk size to cut embedding calls on upload, and a leaner retrieval configuration (no query expansion, single attempt, narrower candidate pool) to cut reranking cost on query. Verified end-to-end with a real question against the live public URL, correctly answered and cited on the first attempt. The live deployment intentionally runs a reduced configuration compared to local dev — documented as a deliberate, explained tradeoff, not a hidden compromise.
+- **v2 follow-up (grounded reformulation)** — Built the fix identified in the fourth case study: `reformulate_query()` now receives the previous attempt's actual retrieved candidates and includes real corpus snippets in its prompt, so it refines around what's actually present instead of guessing an unrelated domain for an ambiguous term (the "VAMP → Vascular Adhesion Molecule" bug). Verified with a regression test built from the real failing case — the actual VAMP definition text now grounds the prompt correctly, and the test explicitly checks the old wrong guess never reappears.
 
 ## v2 roadmap (deferred, not built)
 
