@@ -1,0 +1,1355 @@
+{
+  "timestamp": "20260816_105646",
+  "results": [
+    {
+      "id": "resume_dynamics365",
+      "question": "What experience does this person have with Dynamics 365?",
+      "answer": "This person has 3+ years of experience designing, developing, and delivering enterprise business applications using Microsoft Dynamics 365 CE (Excerpt 1). They have hands-on experience with Dynamics 365, specifically with end-to-end solution delivery, enterprise portal development, workflow automation, and security remediation (Excerpt 1).",
+      "retrieved_filenames": [
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md"
+      ],
+      "sources": [
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.9675,
+          "content_preview": "SHAGUN YADAV\nSenior Software Engineer | Microsoft Dynamics 365 CE | Power Platform | Power Pages\nBengaluru, India | shagun0915@gmail.com | +91 98104 90187 | linkedin.com/in/shagunyadav0915 | github.co..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 10,
+          "rerank_score": 0.0112,
+          "content_preview": "This would have been the ideal Microsoft-native solution, but a redirect URL authentication blocker prevented the agent from connecting to Dataverse.\r\n\r\n### Intended Architecture\r\n\r\n```\r\nPortal (Power..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 7,
+          "rerank_score": 0.0002,
+          "content_preview": "However, it was not suitable for production because sensitive data leaves the Microsoft ecosystem (sent to Anthropic's Claude API) and requires custom server infrastructure.\r\n\r\n### Architecture\r\n\r\n```..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 13,
+          "rerank_score": 0.0,
+          "content_preview": "Return Response     \u2502\r\n\u2502              \u2502 \u25c4\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \u2502                         \u2502\r\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518                    \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\r\n```\r\n\r\n### Components\r\n\r\n| Component | Purpose ..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 15,
+          "rerank_score": 0.0,
+          "content_preview": "Historical Data:\r\n{{dataverse_results}}\r\n\r\nOutput Schema:\r\n{\r\n  \"whatLedToIdentification\": \"string\",\r\n  \"recentActionsTaken\": \"string\",\r\n  \"nextSteps\": \"string\"\r\n}\"\r\n```\r\n\r\n**Step 4: Return JSON Respo..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What experience does this person have with Dynamics 365?",
+          "candidates_found": 20,
+          "top_rerank_score": 0.9675,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.04918
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 10,
+              "fusion_score": 0.04813
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 13,
+              "fusion_score": 0.04763
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.04641
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 2,
+              "fusion_score": 0.04506
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 7,
+              "fusion_score": 0.04463
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 2,
+              "fusion_score": 0.04438
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 23,
+              "fusion_score": 0.04266
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 18,
+              "fusion_score": 0.04253
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 16,
+              "fusion_score": 0.04229
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 21,
+              "fusion_score": 0.04203
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 6,
+              "fusion_score": 0.04192
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 4,
+              "fusion_score": 0.04177
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 19,
+              "fusion_score": 0.04025
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 8,
+              "fusion_score": 0.0402
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 24,
+              "fusion_score": 0.03902
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 12,
+              "fusion_score": 0.03865
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.03031
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 1,
+              "fusion_score": 0.02581
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 11,
+              "fusion_score": 0.02566
+            }
+          ],
+          "query_variants": [
+            "What experience does this person have with Dynamics 365?",
+            "What is this person's background with Dynamics 365",
+            "What kind of experience does this individual have working with Dynamics 365"
+          ],
+          "per_variant_results": [
+            {
+              "query": "What experience does this person have with Dynamics 365?",
+              "candidates_found": 20
+            },
+            {
+              "query": "What is this person's background with Dynamics 365",
+              "candidates_found": 20
+            },
+            {
+              "query": "What kind of experience does this individual have working with Dynamics 365",
+              "candidates_found": 20
+            }
+          ]
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 36.87,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "llm_judge_correct": false,
+      "llm_judge_reasoning": "The answer lacks specific mention of using Dynamics 365 alongside Dataverse, Power Pages, and Power Automate as required.",
+      "passed": true
+    },
+    {
+      "id": "resume_sonarqube",
+      "question": "What security tools were used for remediation?",
+      "answer": "The context does not contain enough information to answer what security tools were used for remediation.",
+      "retrieved_filenames": [
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md"
+      ],
+      "sources": [
+        {
+          "filename": "Document.md",
+          "chunk_index": 1,
+          "rerank_score": 0.9985,
+          "content_preview": "Background & Problem Statement\r\n\r\n### Current Pain Points\r\n\r\n1. **Repetitive Data Entry**: Acquirers and merchants submit remediation plans for the same merchants and TPAs across multiple case events...."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 27,
+          "rerank_score": 0.9735,
+          "content_preview": "This remediation plan requires a [Merchant/Acquirer] template but the uploaded document is '[title]'.\"* |\r\n| Non-template .docx (no Title paragraph, e.g., meeting notes) | Title doesn't match either k..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 3,
+          "rerank_score": 0.9713,
+          "content_preview": "The goal is to fetch the most recent past submissions for the same merchant or TPA and use AI to synthesize a prefill response.\r\n\r\n**Remediation Plan Query (Acquirer Prefill):**\r\n```\r\nTable: ERP Remed..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 25,
+          "rerank_score": 0.9645,
+          "content_preview": "This is the safe path for supporting documents. 4. If the title matches a template but the **wrong type** for this remediation plan's classification \u2192 **reject** with a descriptive error (e.g., *\"Wron..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 19,
+          "rerank_score": 0.9512,
+          "content_preview": "This design enables blank template generation (see Section 10).\r\n\r\n### Template Parsing (Upload & Parse)\r\n\r\nWhen the user uploads a modified template:\r\n\r\n1. Portal uploads the .docx to the Notes/Attac..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What security tools were used for remediation?",
+          "candidates_found": 20,
+          "top_rerank_score": 0.0438,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.04593
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 11,
+              "fusion_score": 0.04583
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 36,
+              "fusion_score": 0.04113
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 55,
+              "fusion_score": 0.04074
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 10,
+              "fusion_score": 0.04073
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 0,
+              "fusion_score": 0.03279
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 19,
+              "fusion_score": 0.0315
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.03128
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 1,
+              "fusion_score": 0.03031
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 6,
+              "fusion_score": 0.02914
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 3,
+              "fusion_score": 0.02899
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 6,
+              "fusion_score": 0.02881
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 27,
+              "fusion_score": 0.02742
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 13,
+              "fusion_score": 0.02721
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 6,
+              "fusion_score": 0.02582
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 51,
+              "fusion_score": 0.02548
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 12,
+              "fusion_score": 0.02548
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.01613
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 49,
+              "fusion_score": 0.01613
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 25,
+              "fusion_score": 0.01587
+            }
+          ],
+          "query_variants": [
+            "What security tools were used for remediation?",
+            "Which technologies were employed to address the security issue",
+            "What measures were taken to mitigate the vulnerability"
+          ],
+          "per_variant_results": [
+            {
+              "query": "What security tools were used for remediation?",
+              "candidates_found": 20
+            },
+            {
+              "query": "Which technologies were employed to address the security issue",
+              "candidates_found": 20
+            },
+            {
+              "query": "What measures were taken to mitigate the vulnerability",
+              "candidates_found": 20
+            }
+          ]
+        },
+        {
+          "attempt": 2,
+          "query": "remediation plan submission tools used by acquirers and merchants",
+          "candidates_found": 20,
+          "top_rerank_score": 0.9985,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Document.md",
+              "chunk_index": 1,
+              "fusion_score": 0.04918
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 3,
+              "fusion_score": 0.04839
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 25,
+              "fusion_score": 0.04688
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 27,
+              "fusion_score": 0.0462
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 4,
+              "fusion_score": 0.04572
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 0,
+              "fusion_score": 0.04545
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 19,
+              "fusion_score": 0.04526
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 13,
+              "fusion_score": 0.0444
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 26,
+              "fusion_score": 0.0435
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 2,
+              "fusion_score": 0.04306
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 8,
+              "fusion_score": 0.04129
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 16,
+              "fusion_score": 0.04093
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 5,
+              "fusion_score": 0.0409
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.04037
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 24,
+              "fusion_score": 0.04022
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 18,
+              "fusion_score": 0.03897
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 21,
+              "fusion_score": 0.0388
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 6,
+              "fusion_score": 0.02797
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 10,
+              "fusion_score": 0.02617
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.02549
+            }
+          ],
+          "query_variants": [
+            "remediation plan submission tools used by acquirers and merchants",
+            "Tools utilized by acquirers and merchants for submitting remediation plans",
+            "Methods used by merchants and acquirers to submit corrective action plans"
+          ],
+          "per_variant_results": [
+            {
+              "query": "remediation plan submission tools used by acquirers and merchants",
+              "candidates_found": 20
+            },
+            {
+              "query": "Tools utilized by acquirers and merchants for submitting remediation plans",
+              "candidates_found": 20
+            },
+            {
+              "query": "Methods used by merchants and acquirers to submit corrective action plans",
+              "candidates_found": 20
+            }
+          ]
+        }
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 3.14,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": false,
+      "reciprocal_rank": 0.0,
+      "keyword_coverage": 0.0,
+      "llm_judge_correct": false,
+      "llm_judge_reasoning": "The AI's answer does not provide the required information about the security tools used for remediation, specifically Checkmarx and SonarQube.",
+      "passed": false
+    },
+    {
+      "id": "resume_verc_revenue",
+      "question": "How much annual revenue does the VERC platform enable?",
+      "answer": "The context does not contain enough information to answer the question about the annual revenue enabled by the VERC platform.",
+      "retrieved_filenames": [
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md"
+      ],
+      "sources": [
+        {
+          "filename": "Document.md",
+          "chunk_index": 0,
+          "rerank_score": 0.4201,
+          "content_preview": "# AI-Powered Prefill for VERC VAMP Remediation Portal\r\n\r\n---\r\n\r\n| Field | Value |\r\n|-------|-------|\r\n| **Document Title** | AI-Powered Prefill for ERP VAMP Remediation Forms |\r\n| **Last Updated** | J..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 1,
+          "rerank_score": 0.1866,
+          "content_preview": "Background & Problem Statement\r\n\r\n### Current Pain Points\r\n\r\n1. **Repetitive Data Entry**: Acquirers and merchants submit remediation plans for the same merchants and TPAs across multiple case events...."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 19,
+          "rerank_score": 0.0339,
+          "content_preview": "This design enables blank template generation (see Section 10).\r\n\r\n### Template Parsing (Upload & Parse)\r\n\r\nWhen the user uploads a modified template:\r\n\r\n1. Portal uploads the .docx to the Notes/Attac..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 25,
+          "rerank_score": 0.025,
+          "content_preview": "This is the safe path for supporting documents. 4. If the title matches a template but the **wrong type** for this remediation plan's classification \u2192 **reject** with a descriptive error (e.g., *\"Wron..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 3,
+          "rerank_score": 0.0245,
+          "content_preview": "The goal is to fetch the most recent past submissions for the same merchant or TPA and use AI to synthesize a prefill response.\r\n\r\n**Remediation Plan Query (Acquirer Prefill):**\r\n```\r\nTable: ERP Remed..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "How much annual revenue does the VERC platform enable?",
+          "candidates_found": 20,
+          "top_rerank_score": 0.0001,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Document.md",
+              "chunk_index": 1,
+              "fusion_score": 0.04865
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 0,
+              "fusion_score": 0.0484
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 8,
+              "fusion_score": 0.04624
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.04616
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 16,
+              "fusion_score": 0.04572
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 13,
+              "fusion_score": 0.0457
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 18,
+              "fusion_score": 0.04496
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 3,
+              "fusion_score": 0.0442
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 4,
+              "fusion_score": 0.04333
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 2,
+              "fusion_score": 0.0415
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 10,
+              "fusion_score": 0.04031
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 2,
+              "fusion_score": 0.03984
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 7,
+              "fusion_score": 0.02804
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 19,
+              "fusion_score": 0.02769
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 3,
+              "fusion_score": 0.02759
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.02674
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 3,
+              "fusion_score": 0.02667
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 6,
+              "fusion_score": 0.0265
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 2,
+              "fusion_score": 0.02601
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 4,
+              "fusion_score": 0.02532
+            }
+          ],
+          "query_variants": [
+            "How much annual revenue does the VERC platform enable?",
+            "What is the yearly income generated through the VERC platform",
+            "What annual earnings are facilitated by the VERC platform"
+          ],
+          "per_variant_results": [
+            {
+              "query": "How much annual revenue does the VERC platform enable?",
+              "candidates_found": 20
+            },
+            {
+              "query": "What is the yearly income generated through the VERC platform",
+              "candidates_found": 20
+            },
+            {
+              "query": "What annual earnings are facilitated by the VERC platform",
+              "candidates_found": 20
+            }
+          ]
+        },
+        {
+          "attempt": 2,
+          "query": "VERC platform revenue generation or financial impact on merchant acquirers and remediation plans",
+          "candidates_found": 20,
+          "top_rerank_score": 0.4201,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Document.md",
+              "chunk_index": 1,
+              "fusion_score": 0.04918
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 0,
+              "fusion_score": 0.04839
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 3,
+              "fusion_score": 0.04737
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 4,
+              "fusion_score": 0.04712
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 13,
+              "fusion_score": 0.04524
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 8,
+              "fusion_score": 0.04482
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 27,
+              "fusion_score": 0.04418
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 25,
+              "fusion_score": 0.04359
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 2,
+              "fusion_score": 0.04248
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 10,
+              "fusion_score": 0.04241
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 5,
+              "fusion_score": 0.04154
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.04131
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 19,
+              "fusion_score": 0.04125
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.04092
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 26,
+              "fusion_score": 0.04042
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 7,
+              "fusion_score": 0.03847
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 36,
+              "fusion_score": 0.02753
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 18,
+              "fusion_score": 0.0262
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 3,
+              "fusion_score": 0.02582
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 45,
+              "fusion_score": 0.02549
+            }
+          ],
+          "query_variants": [
+            "VERC platform revenue generation or financial impact on merchant acquirers and remediation plans",
+            "Financial effects of VERC platform on merchant acquirers and strategies for mitigation",
+            "VERC platform revenue implications and corrective measures for merchant acquirers"
+          ],
+          "per_variant_results": [
+            {
+              "query": "VERC platform revenue generation or financial impact on merchant acquirers and remediation plans",
+              "candidates_found": 20
+            },
+            {
+              "query": "Financial effects of VERC platform on merchant acquirers and strategies for mitigation",
+              "candidates_found": 20
+            },
+            {
+              "query": "VERC platform revenue implications and corrective measures for merchant acquirers",
+              "candidates_found": 20
+            }
+          ]
+        }
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 3.1,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": false,
+      "reciprocal_rank": 0.0,
+      "keyword_coverage": 0.0,
+      "llm_judge_correct": false,
+      "llm_judge_reasoning": "The AI's answer fails to provide the specific annual revenue figure, instead stating a lack of information.",
+      "passed": false
+    },
+    {
+      "id": "resume_career_progression",
+      "question": "What was the career progression at Visa, from first role to most recent?",
+      "answer": "The context does not contain enough information to answer the question about career progression at Visa.",
+      "retrieved_filenames": [
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md"
+      ],
+      "sources": [
+        {
+          "filename": "Document.md",
+          "chunk_index": 3,
+          "rerank_score": 0.0001,
+          "content_preview": "The goal is to fetch the most recent past submissions for the same merchant or TPA and use AI to synthesize a prefill response.\r\n\r\n**Remediation Plan Query (Acquirer Prefill):**\r\n```\r\nTable: ERP Remed..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 2,
+          "rerank_score": 0.0001,
+          "content_preview": "Data Model & Field Mappings\r\n\r\n> **Note:** This section describes the Dataverse schema and field mappings that are **shared across all approaches**. Regardless of which backend generates the AI conten..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 4,
+          "rerank_score": 0.0,
+          "content_preview": "We query the most recent past questionnaire directly and copy the value:\r\n\r\n```\r\nFilter: visa_merchantname eq '{name}' AND statecode eq 0\r\nSelect: visa_merchanturl, visa_merchantlegalname, createdon\r\n..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 1,
+          "rerank_score": 0.0,
+          "content_preview": "Background & Problem Statement\r\n\r\n### Current Pain Points\r\n\r\n1. **Repetitive Data Entry**: Acquirers and merchants submit remediation plans for the same merchants and TPAs across multiple case events...."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 19,
+          "rerank_score": 0.0,
+          "content_preview": "This design enables blank template generation (see Section 10).\r\n\r\n### Template Parsing (Upload & Parse)\r\n\r\nWhen the user uploads a modified template:\r\n\r\n1. Portal uploads the .docx to the Notes/Attac..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What was the career progression at Visa, from first role to most recent?",
+          "candidates_found": 20,
+          "top_rerank_score": 0.0054,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Document.md",
+              "chunk_index": 4,
+              "fusion_score": 0.04892
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 3,
+              "fusion_score": 0.04702
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 21,
+              "fusion_score": 0.04667
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 19,
+              "fusion_score": 0.04616
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 1,
+              "fusion_score": 0.04592
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 27,
+              "fusion_score": 0.04533
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 2,
+              "fusion_score": 0.04508
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 13,
+              "fusion_score": 0.04448
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 25,
+              "fusion_score": 0.0427
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 3,
+              "fusion_score": 0.04171
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.04026
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 16,
+              "fusion_score": 0.04024
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 8,
+              "fusion_score": 0.03832
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 20,
+              "fusion_score": 0.02859
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.0278
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 26,
+              "fusion_score": 0.02775
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 2,
+              "fusion_score": 0.02727
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 4,
+              "fusion_score": 0.02632
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 5,
+              "fusion_score": 0.0262
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.01471
+            }
+          ],
+          "query_variants": [
+            "What was the career progression at Visa, from first role to most recent?",
+            "What positions did an individual hold while working at Visa from start to finish",
+            "How did a person's job title change over time during their tenure at Visa"
+          ],
+          "per_variant_results": [
+            {
+              "query": "What was the career progression at Visa, from first role to most recent?",
+              "candidates_found": 20
+            },
+            {
+              "query": "What positions did an individual hold while working at Visa from start to finish",
+              "candidates_found": 20
+            },
+            {
+              "query": "How did a person's job title change over time during their tenure at Visa",
+              "candidates_found": 20
+            }
+          ]
+        },
+        {
+          "attempt": 2,
+          "query": "career path or job progression within Visa company from initial position to current role",
+          "candidates_found": 20,
+          "top_rerank_score": 0.0001,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Document.md",
+              "chunk_index": 4,
+              "fusion_score": 0.04918
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 3,
+              "fusion_score": 0.04839
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 1,
+              "fusion_score": 0.04688
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 19,
+              "fusion_score": 0.0462
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 13,
+              "fusion_score": 0.04569
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 21,
+              "fusion_score": 0.04502
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 2,
+              "fusion_score": 0.04488
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 27,
+              "fusion_score": 0.04478
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 8,
+              "fusion_score": 0.04226
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 3,
+              "fusion_score": 0.04198
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 25,
+              "fusion_score": 0.04144
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 2,
+              "fusion_score": 0.04135
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.04015
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 6,
+              "fusion_score": 0.03931
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 20,
+              "fusion_score": 0.03865
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 28,
+              "fusion_score": 0.02817
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 16,
+              "fusion_score": 0.02669
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.02617
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 0,
+              "fusion_score": 0.02615
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.01408
+            }
+          ],
+          "query_variants": [
+            "career path or job progression within Visa company from initial position to current role",
+            "professional advancement opportunities at Visa from entry level to current position",
+            "internal job progression and career development at Visa company"
+          ],
+          "per_variant_results": [
+            {
+              "query": "career path or job progression within Visa company from initial position to current role",
+              "candidates_found": 20
+            },
+            {
+              "query": "professional advancement opportunities at Visa from entry level to current position",
+              "candidates_found": 20
+            },
+            {
+              "query": "internal job progression and career development at Visa company",
+              "candidates_found": 20
+            }
+          ]
+        }
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 2.77,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": false,
+      "reciprocal_rank": 0.0,
+      "keyword_coverage": 0.0,
+      "llm_judge_correct": false,
+      "llm_judge_reasoning": "The AI's answer does not provide any information about the career progression at Visa.",
+      "passed": false
+    },
+    {
+      "id": "resume_raahee",
+      "question": "What technology was used at the Raahee internship?",
+      "answer": "At the Raahee internship, the technologies used were React.js for the web application, as well as frontend-backend API integration, bug fixes, and production deployments (Excerpt 1).",
+      "retrieved_filenames": [
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Document.md",
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Document.md"
+      ],
+      "sources": [
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 2,
+          "rerank_score": 0.961,
+          "content_preview": "Delivered 1,000+ production pull requests  while maintaining high engineering quality; owned remediation of approximately 80% \nof application security findings  (Checkmarx, SonarQube). EARLIER EXPERIE..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 10,
+          "rerank_score": 0.0,
+          "content_preview": "This would have been the ideal Microsoft-native solution, but a redirect URL authentication blocker prevented the agent from connecting to Dataverse.\r\n\r\n### Intended Architecture\r\n\r\n```\r\nPortal (Power..."
+        },
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 3,
+          "rerank_score": 0.0,
+          "content_preview": "PUBLICATIONS\nComparative Analysis of Sequential CNN and Fine-Tuned Vision Transformer for Contact-Based to Contactless Fingerprint \nRecognition (IJAECS Conference Publication) \u2014 co-authored research c..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 3,
+          "rerank_score": 0.0,
+          "content_preview": "We are fully aware of the UGC regulations for the promotion of \nacademic integrity and the prevention of plagiarism in higher educational institutions. In case \nplagiarism is detected at any stage, we..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 15,
+          "rerank_score": 0.0,
+          "content_preview": "Historical Data:\r\n{{dataverse_results}}\r\n\r\nOutput Schema:\r\n{\r\n  \"whatLedToIdentification\": \"string\",\r\n  \"recentActionsTaken\": \"string\",\r\n  \"nextSteps\": \"string\"\r\n}\"\r\n```\r\n\r\n**Step 4: Return JSON Respo..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What technology was used at the Raahee internship?",
+          "candidates_found": 20,
+          "top_rerank_score": 0.961,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 2,
+              "fusion_score": 0.04918
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 10,
+              "fusion_score": 0.04691
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 3,
+              "fusion_score": 0.04642
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 3,
+              "fusion_score": 0.04548
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.04531
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.04431
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.04382
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 7,
+              "fusion_score": 0.04351
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.04266
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 45,
+              "fusion_score": 0.04104
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 39,
+              "fusion_score": 0.03916
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 34,
+              "fusion_score": 0.02881
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 6,
+              "fusion_score": 0.02879
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 46,
+              "fusion_score": 0.02819
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 40,
+              "fusion_score": 0.02762
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 36,
+              "fusion_score": 0.02744
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 12,
+              "fusion_score": 0.0274
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 42,
+              "fusion_score": 0.02699
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 38,
+              "fusion_score": 0.02667
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 35,
+              "fusion_score": 0.02564
+            }
+          ],
+          "query_variants": [
+            "What technology was used at the Raahee internship?",
+            "Which tools and systems were utilized during the Raahee internship program",
+            "What kind of technical solutions were employed by interns at Raahee"
+          ],
+          "per_variant_results": [
+            {
+              "query": "What technology was used at the Raahee internship?",
+              "candidates_found": 20
+            },
+            {
+              "query": "Which tools and systems were utilized during the Raahee internship program",
+              "candidates_found": 20
+            },
+            {
+              "query": "What kind of technical solutions were employed by interns at Raahee",
+              "candidates_found": 20
+            }
+          ]
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 1.47,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "llm_judge_correct": true,
+      "llm_judge_reasoning": "The AI's answer mentions React.js being used to build the web application during the Raahee internship, directly addressing the question.",
+      "passed": true
+    },
+    {
+      "id": "research_rank1_accuracy",
+      "question": "What was the Rank-1 accuracy achieved by the fine-tuned Vision Transformer?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_auc_roc",
+      "question": "What AUC-ROC score did the fingerprint recognition model achieve?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_equal_error_rate",
+      "question": "What was the Equal Error Rate of the fine-tuned model?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_dataset_used",
+      "question": "What fingerprint database was used to evaluate the models?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "visa_visanet",
+      "question": "What network does Visa operate?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "negative_unanswerable",
+      "question": "What is the capital of France?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    }
+  ]
+}

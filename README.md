@@ -154,7 +154,7 @@ app/
                                    query_reformulation.py, query_expansion.py,
                                    expanded_search.py, agentic_retrieval.py
     generation/                    llm_client.py (Ollama/Anthropic dispatch), answer.py
-    evaluation/                     golden_dataset.py, metrics.py, run_eval.py, reports/
+    evaluation/                     golden_dataset.py, metrics.py, llm_judge.py, run_eval.py, reports/
 tests/                          Pure-logic unit tests, offline-runnable, one file per service
 ```
 
@@ -203,9 +203,106 @@ scores each result, prints a summary table, and saves a full JSON report
 (including per-chunk rerank scores and the exact reformulated queries
 tried) to `app/services/evaluation/reports/`.
 
-**Metrics:** Recall@K, MRR, keyword coverage (faithfulness proxy), and
-correct-abstention rate (does the system say "I don't know" on a
-genuinely unanswerable question, rather than hallucinate).
+**Metrics:** Recall@K, MRR, keyword coverage (fast, free faithfulness
+proxy), LLM-as-judge (a second, independent LLM call assessing semantic
+correctness — see below), and correct-abstention rate (does the system
+say "I don't know" on a genuinely unanswerable question, rather than
+hallucinate).
+
+**LLM-as-judge, added as a v2 follow-up.** Keyword coverage is
+fast and free, but it's just substring presence — it can pass a
+technically-wrong answer that happens to contain the right number, and
+fail a correct answer phrased differently than expected. Every
+answerable case now also gets a second LLM call (`llm_judge.py`) that
+judges whether the answer actually, semantically addresses the
+question, given a plain-language description of what a correct answer
+should say. **Deliberately additive, not a replacement** — both scores
+are reported side by side, and cases where they disagree are flagged
+explicitly in the report rather than averaged away, since a
+disagreement is itself a useful signal about which check is wrong on
+that specific case. Real cost, stated plainly: this roughly doubles the
+number of LLM calls the eval script makes, so a full run takes
+noticeably longer.
+
+**A real problem this doubled load exposed, found immediately on first
+use:** running the suite against local Ollama, the increased sequential
+call volume caused Ollama itself to fail partway through a run — a
+`502 Bad Gateway`, confirmed via the API's own logs to be intentional
+error-translation (a `RuntimeError` from a failed LLM call, correctly
+mapped to 502), not a bug in the new judge code. The eval script itself
+had a real gap here too: one case's failure crashed the *entire* run,
+losing every result that had already succeeded. Fixed: `run_eval.py`
+now catches per-case failures, reports them explicitly as their own
+result type, and continues with the rest of the suite — an eval harness
+calling real, sometimes-flaky external infrastructure should be
+resilient to individual failures, not fragile to them. Verified with a
+simulated mixed batch (2 successes, 1 failure, 1 abstention): aggregate
+math correctly excludes the failed case rather than silently corrupting
+every mean with a `None` value.
+
+**The fault-tolerance fix was then verified for real, not just
+simulated** — and the real run surfaced more than expected. 6 of 11
+cases failed outright (mostly `502`s, one `500`), yet the run completed
+with a full report instead of crashing, exactly as designed.
+
+**LLM-as-judge caught something real on its very first live run.**
+`resume_dynamics365` scored a perfect `1.0` on keyword coverage (it
+contains "Dynamics 365") but the judge marked it **incorrect**:
+*"mentions experience with Dynamics 365 CE, but lacks detail about
+hands-on experience with Dataverse, Power Pages, and Power Automate."*
+That's precisely the gap this feature was built to close — an answer
+that's technically keyword-complete but substantively thin, invisible
+to substring matching, caught by a judge held to the fuller expected
+answer.
+
+**A wrong theory, corrected — worth showing, not hiding.** The first
+case took `~38-40s` and was correct. The next few completed
+suspiciously fast (`~2.8s`) and scored `0.0` across every metric, before
+several more failed outright with `502`s. The first working theory was
+that local Ollama was degrading under sustained sequential load —
+plausible given the pattern, stated with appropriate hedging at the
+time, but **wrong**, and confirmed wrong rather than left as a
+plausible-sounding guess. Two things made the correction possible
+instead of the mistake just persisting:
+
+1. **A real gap in the eval harness's own debugging output.** The
+   original error capturing only recorded httpx's generic status line
+   (`"Server error '502 Bad Gateway' for url '...'"`) — it discarded the
+   actual response body, which is exactly where the real cause lives.
+   Fixed: `run_case()` now extracts the API's actual `detail` message
+   from the response body on any error.
+2. **That fix immediately surfaced the true cause**, no more guessing:
+   `"Groq free-tier rate limit hit (30 requests/min, 14,400/day)"`.
+   Ollama was never involved — the `.env` had already been switched to
+   `LLM_PROVIDER=groq` before this stress test began. With query
+   expansion, possible reformulation, generation, and the separate
+   judge call, a single case can trigger up to 3 Groq calls; 11 cases in
+   rapid succession comfortably exceeds 30 requests/minute.
+
+**Addressed, but not fully solved — verified by testing the fix and
+finding its limits.** `run_eval.py` now paces itself between cases.
+Testing this at 5 seconds reduced failures (8 of 11 down to 6 of 11),
+but didn't eliminate them — real evidence the average call rate was
+already comfortably under Groq's limit (measured ~12/min), pointing to
+burst sensitivity rather than average throughput as the real
+constraint: each case's 2-3 Groq calls fire in a tight cluster with no
+internal spacing, and pacing *between* cases doesn't smooth out that
+*within-case* burst. Increased to 15 seconds for more headroom, stated
+honestly as reducing the failure rate rather than guaranteeing it's
+gone — a fully complete fix would need pacing between the individual
+calls inside a single case too, real additional scope not built here.
+
+**A genuine code gap, found by this stress and fixed.** One earlier
+failure came back as `500 Internal Server Error`, different from the
+rest — traced to `api/query.py` only wrapping the final
+`generate_answer()` call in its error-handling `try/except`, not the
+retrieval step before it. `agentic_retrieve()` also makes an LLM call
+internally (`reformulate_query`, when a second attempt fires), and that
+failure path was completely unhandled, falling through to a generic,
+unhelpful 500 instead of the same clean, informative 502 a generation
+failure produces. **Fixed** — the try/except now wraps the whole
+pipeline, so any LLM-related failure anywhere in `/query` behaves
+consistently.
 
 **Honest scope note:** 11 hand-verified questions, not the 100-300 a
 production suite would have — a deliberate choice for a solo one-week
@@ -647,13 +744,15 @@ moving to the next:
 - **v2 follow-up (deployment correction)** — Attempted the actual Koyeb deployment and hit a wall: Mistral AI acquired Koyeb in February 2026, and new users can no longer sign up for its free tier. The recommendation was accurate when written days earlier but had gone stale by the time it was acted on — corrected the deployment guide to Render (API) + Supabase (database, pgvector as a first-class feature) once this was discovered, rather than leaving the outdated guidance in place.
 - **v2 follow-up (live deployment, completed)** — Actually deployed to Render + Supabase, hit two real, distinct free-tier CPU limits in sequence (document uploads timing out, then queries timing out), diagnosed each with real evidence (browser DevTools network traces, not guesses), and fixed both: configurable fixed-chunk size to cut embedding calls on upload, and a leaner retrieval configuration (no query expansion, single attempt, narrower candidate pool) to cut reranking cost on query. Verified end-to-end with a real question against the live public URL, correctly answered and cited on the first attempt. The live deployment intentionally runs a reduced configuration compared to local dev — documented as a deliberate, explained tradeoff, not a hidden compromise.
 - **v2 follow-up (grounded reformulation, fixed and confirmed live)** — Built the fix identified in the fourth case study: `reformulate_query()` now receives the previous attempt's actual retrieved candidates and includes real corpus snippets in its prompt, so it refines around what's actually present instead of guessing an unrelated domain for an ambiguous term (the "VAMP → Vascular Adhesion Molecule" bug). Verified two ways: a regression test built from the real failing case, and a live re-run of the exact original query — reformulation now produces a genuinely grounded rewrite (quoting the real document's actual title text) instead of a wrong-domain guess, and the corrected retrieval jumps from `0.0276` to `0.9832`, recovering the correct, properly-cited answer.
+- **v2 follow-up (LLM-as-judge evaluation)** — Upgraded the eval harness's faithfulness check, which had been documented as a known limitation (substring matching only) since Day 6. Every answerable golden-dataset case now gets a second, independent LLM call judging semantic correctness against a plain-language description of the expected answer, reported alongside — not replacing — the original keyword-coverage check. Disagreements between the two are surfaced explicitly in the report, since they're a genuine diagnostic signal, not noise to average away.
+- **v2 follow-up (eval fault-tolerance, then a real stress test, then a wrong theory corrected)** — Made `run_eval.py` resilient to individual case failures, since the doubled LLM call volume from adding a judge exposed a real gap (one failed case crashed the entire run). The real run this fix enabled surfaced more: LLM-as-judge catching a genuinely thin answer that keyword coverage had scored perfect (a real win for the feature, on its first live run) and a real code gap in `api/query.py` (only the final generation step had proper error handling, not the retrieval step, which also makes an LLM call) — found via an actual `500`, root-caused, and fixed. The first theory for a wave of `502`s — local Ollama degrading under load — was plausible-sounding but wrong, and was caught rather than left standing: the eval harness's own error capturing had a real gap (discarding the actual response body), fixed, which immediately surfaced the true cause — a Groq free-tier rate limit (30 requests/min), not Ollama at all. Fixed properly: `run_eval.py` now paces itself between cases to stay under the documented limit.
 
 ## v2 roadmap (deferred, not built)
 
 Multimodal document processing (OCR, tables), claim-level citation
 verification, confidence-aware human review queue, full
-observability/tracing integration, LLM-as-judge faithfulness scoring,
-per-document-type retrieval weighting.
+observability/tracing integration, per-document-type retrieval
+weighting.
 
 ## License
 

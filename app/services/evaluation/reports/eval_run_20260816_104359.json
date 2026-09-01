@@ -1,0 +1,753 @@
+{
+  "timestamp": "20260816_104359",
+  "results": [
+    {
+      "id": "resume_dynamics365",
+      "question": "What experience does this person have with Dynamics 365?",
+      "answer": "This person has 3+ years of experience designing, developing, and delivering enterprise business applications using Microsoft Dynamics 365 CE (Excerpt 1).",
+      "retrieved_filenames": [
+        "Shagun_Yadav_ATS_Resume_MSD.pdf",
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md"
+      ],
+      "sources": [
+        {
+          "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+          "chunk_index": 0,
+          "rerank_score": 0.9675,
+          "content_preview": "SHAGUN YADAV\nSenior Software Engineer | Microsoft Dynamics 365 CE | Power Platform | Power Pages\nBengaluru, India | shagun0915@gmail.com | +91 98104 90187 | linkedin.com/in/shagunyadav0915 | github.co..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 10,
+          "rerank_score": 0.0112,
+          "content_preview": "This would have been the ideal Microsoft-native solution, but a redirect URL authentication blocker prevented the agent from connecting to Dataverse.\r\n\r\n### Intended Architecture\r\n\r\n```\r\nPortal (Power..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 7,
+          "rerank_score": 0.0002,
+          "content_preview": "However, it was not suitable for production because sensitive data leaves the Microsoft ecosystem (sent to Anthropic's Claude API) and requires custom server infrastructure.\r\n\r\n### Architecture\r\n\r\n```..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 13,
+          "rerank_score": 0.0,
+          "content_preview": "Return Response     \u2502\r\n\u2502              \u2502 \u25c4\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 \u2502                         \u2502\r\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518                    \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\r\n```\r\n\r\n### Components\r\n\r\n| Component | Purpose ..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 15,
+          "rerank_score": 0.0,
+          "content_preview": "Historical Data:\r\n{{dataverse_results}}\r\n\r\nOutput Schema:\r\n{\r\n  \"whatLedToIdentification\": \"string\",\r\n  \"recentActionsTaken\": \"string\",\r\n  \"nextSteps\": \"string\"\r\n}\"\r\n```\r\n\r\n**Step 4: Return JSON Respo..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What experience does this person have with Dynamics 365?",
+          "candidates_found": 20,
+          "top_rerank_score": 0.9675,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.04918
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 10,
+              "fusion_score": 0.04813
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 13,
+              "fusion_score": 0.04763
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.04618
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 2,
+              "fusion_score": 0.04505
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 7,
+              "fusion_score": 0.04482
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 2,
+              "fusion_score": 0.04439
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 18,
+              "fusion_score": 0.04311
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.04305
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 21,
+              "fusion_score": 0.04242
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 23,
+              "fusion_score": 0.04186
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 16,
+              "fusion_score": 0.04177
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 4,
+              "fusion_score": 0.0417
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 6,
+              "fusion_score": 0.04128
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 8,
+              "fusion_score": 0.04038
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 19,
+              "fusion_score": 0.0399
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 24,
+              "fusion_score": 0.03953
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 12,
+              "fusion_score": 0.03897
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 1,
+              "fusion_score": 0.02615
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 11,
+              "fusion_score": 0.01316
+            }
+          ],
+          "query_variants": [
+            "What experience does this person have with Dynamics 365?",
+            "What background does this individual have with Dynamics 365",
+            "What is this person's level of expertise with Dynamics 365"
+          ],
+          "per_variant_results": [
+            {
+              "query": "What experience does this person have with Dynamics 365?",
+              "candidates_found": 20
+            },
+            {
+              "query": "What background does this individual have with Dynamics 365",
+              "candidates_found": 20
+            },
+            {
+              "query": "What is this person's level of expertise with Dynamics 365",
+              "candidates_found": 20
+            }
+          ]
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 38.35,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "llm_judge_correct": false,
+      "llm_judge_reasoning": "The AI's answer mentions experience with Dynamics 365 CE but does not specifically mention using it alongside Dataverse, Power Pages, and Power Automate as required.",
+      "passed": true
+    },
+    {
+      "id": "resume_sonarqube",
+      "question": "What security tools were used for remediation?",
+      "answer": "The context does not contain enough information to answer this question.",
+      "retrieved_filenames": [
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md",
+        "Document.md"
+      ],
+      "sources": [
+        {
+          "filename": "Document.md",
+          "chunk_index": 0,
+          "rerank_score": 0.9853,
+          "content_preview": "# AI-Powered Prefill for VERC VAMP Remediation Portal\r\n\r\n---\r\n\r\n| Field | Value |\r\n|-------|-------|\r\n| **Document Title** | AI-Powered Prefill for ERP VAMP Remediation Forms |\r\n| **Last Updated** | J..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 3,
+          "rerank_score": 0.4988,
+          "content_preview": "The goal is to fetch the most recent past submissions for the same merchant or TPA and use AI to synthesize a prefill response.\r\n\r\n**Remediation Plan Query (Acquirer Prefill):**\r\n```\r\nTable: ERP Remed..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 25,
+          "rerank_score": 0.4711,
+          "content_preview": "This is the safe path for supporting documents. 4. If the title matches a template but the **wrong type** for this remediation plan's classification \u2192 **reject** with a descriptive error (e.g., *\"Wron..."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 1,
+          "rerank_score": 0.2174,
+          "content_preview": "Background & Problem Statement\r\n\r\n### Current Pain Points\r\n\r\n1. **Repetitive Data Entry**: Acquirers and merchants submit remediation plans for the same merchants and TPAs across multiple case events...."
+        },
+        {
+          "filename": "Document.md",
+          "chunk_index": 27,
+          "rerank_score": 0.1314,
+          "content_preview": "This remediation plan requires a [Merchant/Acquirer] template but the uploaded document is '[title]'.\"* |\r\n| Non-template .docx (no Title paragraph, e.g., meeting notes) | Title doesn't match either k..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What security tools were used for remediation?",
+          "candidates_found": 20,
+          "top_rerank_score": 0.0413,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.04693
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 11,
+              "fusion_score": 0.04681
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.04616
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 0,
+              "fusion_score": 0.0446
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 36,
+              "fusion_score": 0.04315
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 10,
+              "fusion_score": 0.04314
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 55,
+              "fusion_score": 0.0415
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 41,
+              "fusion_score": 0.0311
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 41,
+              "fusion_score": 0.03012
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 32,
+              "fusion_score": 0.02964
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 35,
+              "fusion_score": 0.02963
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 6,
+              "fusion_score": 0.02778
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 3,
+              "fusion_score": 0.02753
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 34,
+              "fusion_score": 0.02721
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 38,
+              "fusion_score": 0.02705
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 6,
+              "fusion_score": 0.0265
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 6,
+              "fusion_score": 0.02649
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 51,
+              "fusion_score": 0.02548
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.01613
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 25,
+              "fusion_score": 0.01587
+            }
+          ],
+          "query_variants": [
+            "What security tools were used for remediation?",
+            "Which security measures were implemented for mitigation purposes",
+            "What technologies were utilized to resolve the security issue"
+          ],
+          "per_variant_results": [
+            {
+              "query": "What security tools were used for remediation?",
+              "candidates_found": 20
+            },
+            {
+              "query": "Which security measures were implemented for mitigation purposes",
+              "candidates_found": 20
+            },
+            {
+              "query": "What technologies were utilized to resolve the security issue",
+              "candidates_found": 20
+            }
+          ]
+        },
+        {
+          "attempt": 2,
+          "query": "remediation plan tools used for ERP VAMP or VERC remediation processes",
+          "candidates_found": 20,
+          "top_rerank_score": 0.9853,
+          "pre_rerank_candidates": [
+            {
+              "filename": "Document.md",
+              "chunk_index": 0,
+              "fusion_score": 0.04918
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 1,
+              "fusion_score": 0.04839
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 3,
+              "fusion_score": 0.04737
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 25,
+              "fusion_score": 0.04639
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 6,
+              "fusion_score": 0.04569
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 15,
+              "fusion_score": 0.04478
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 1,
+              "fusion_score": 0.04447
+            },
+            {
+              "filename": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+              "chunk_index": 3,
+              "fusion_score": 0.04194
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 5,
+              "fusion_score": 0.04192
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 12,
+              "fusion_score": 0.04152
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 2,
+              "fusion_score": 0.04144
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 10,
+              "fusion_score": 0.04099
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 8,
+              "fusion_score": 0.04083
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 6,
+              "fusion_score": 0.03983
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 19,
+              "fusion_score": 0.02904
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 13,
+              "fusion_score": 0.02778
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 26,
+              "fusion_score": 0.02721
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 11,
+              "fusion_score": 0.02679
+            },
+            {
+              "filename": "Document.md",
+              "chunk_index": 27,
+              "fusion_score": 0.01429
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.01389
+            }
+          ],
+          "query_variants": [
+            "remediation plan tools used for ERP VAMP or VERC remediation processes",
+            "ERP system remediation techniques for VAMP and VERC compliance",
+            "Software solutions used in VAMP or VERC remediation efforts for enterprise resource planning systems"
+          ],
+          "per_variant_results": [
+            {
+              "query": "remediation plan tools used for ERP VAMP or VERC remediation processes",
+              "candidates_found": 20
+            },
+            {
+              "query": "ERP system remediation techniques for VAMP and VERC compliance",
+              "candidates_found": 20
+            },
+            {
+              "query": "Software solutions used in VAMP or VERC remediation efforts for enterprise resource planning systems",
+              "candidates_found": 20
+            }
+          ]
+        }
+      ],
+      "num_retrieval_attempts": 2,
+      "latency_seconds": 2.91,
+      "type": "answerable",
+      "expected_source_document": "Shagun_Yadav_ATS_Resume_MSD.pdf",
+      "retrieval_recall": false,
+      "reciprocal_rank": 0.0,
+      "keyword_coverage": 0.0,
+      "llm_judge_correct": false,
+      "llm_judge_reasoning": "The AI's answer does not name the required security tools or address the remediation context.",
+      "passed": false
+    },
+    {
+      "id": "resume_verc_revenue",
+      "question": "How much annual revenue does the VERC platform enable?",
+      "type": "error",
+      "passed": false,
+      "error": "Server error '502 Bad Gateway' for url 'http://localhost:8000/query'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "resume_career_progression",
+      "question": "What was the career progression at Visa, from first role to most recent?",
+      "type": "error",
+      "passed": false,
+      "error": "Server error '502 Bad Gateway' for url 'http://localhost:8000/query'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "resume_raahee",
+      "question": "What technology was used at the Raahee internship?",
+      "type": "error",
+      "passed": false,
+      "error": "Server error '502 Bad Gateway' for url 'http://localhost:8000/query'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_rank1_accuracy",
+      "question": "What was the Rank-1 accuracy achieved by the fine-tuned Vision Transformer?",
+      "type": "error",
+      "passed": false,
+      "error": "Server error '502 Bad Gateway' for url 'http://localhost:8000/query'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_auc_roc",
+      "question": "What AUC-ROC score did the fingerprint recognition model achieve?",
+      "answer": "The fine-tuned ViT model achieved an AUC-ROC score of 99.99% (Excerpt 1 and Excerpt 2). The sequential CNN model achieved an AUC-ROC score of 96.70% (Excerpt 1).",
+      "retrieved_filenames": [
+        "research paper ieee.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "Group_7_Major_Project_Report_C2CL.pdf",
+        "research paper ieee.pdf",
+        "research paper ieee.pdf"
+      ],
+      "sources": [
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 24,
+          "rerank_score": 0.983,
+          "content_preview": "VI. RESULTS  \nA variety of comparative research outcomes are presented \nin this section. The two deep learning models, sequential CNN \nand fine -tuned ViT, were assessed on the PolyU fingerprint \ndata..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 33,
+          "rerank_score": 0.9723,
+          "content_preview": "Although the PolyU fingerprint \ndatabase[ 1] is a popular dataset for fingerprint recognition research, the models' performance \non other datasets may vary. As a result, future studies should test the..."
+        },
+        {
+          "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+          "chunk_index": 34,
+          "rerank_score": 0.7123,
+          "content_preview": "In conclusion, our study demonstrated that deep learning models can be highly effective in \nfingerprint recognition tasks, and the fine -tuned ViT model can achieve superior performance \ncompared to t..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 4,
+          "rerank_score": 0.1116,
+          "content_preview": "We evaluated the performance of these models on the PolyU \nDatabase[ 1] and proposed a novel approach base d on accuracy \nusing the Vision Transformer model. Our proposed approach \nasserted the effect..."
+        },
+        {
+          "filename": "research paper ieee.pdf",
+          "chunk_index": 31,
+          "rerank_score": 0.0976,
+          "content_preview": "Despite the fact that the fine -tuned ViT model performed  \nwell in this study, more research is needed to optimize the \nmodel's hyperparameters and investigate different \narchitectures. Furthermore, ..."
+        }
+      ],
+      "retrieval_attempts": [
+        {
+          "attempt": 1,
+          "query": "What AUC-ROC score did the fingerprint recognition model achieve?",
+          "candidates_found": 20,
+          "top_rerank_score": 0.983,
+          "pre_rerank_candidates": [
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 11,
+              "fusion_score": 0.0469
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 9,
+              "fusion_score": 0.04596
+            },
+            {
+              "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+              "chunk_index": 5,
+              "fusion_score": 0.04425
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 16,
+              "fusion_score": 0.04398
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 33,
+              "fusion_score": 0.03154
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.03037
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 23,
+              "fusion_score": 0.02991
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 31,
+              "fusion_score": 0.02976
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 29,
+              "fusion_score": 0.02967
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 10,
+              "fusion_score": 0.02929
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 34,
+              "fusion_score": 0.02848
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 24,
+              "fusion_score": 0.02845
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 10,
+              "fusion_score": 0.02837
+            },
+            {
+              "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+              "chunk_index": 3,
+              "fusion_score": 0.02731
+            },
+            {
+              "filename": "Group 7- Contact to contactless fingerprint matching report.pdf",
+              "chunk_index": 0,
+              "fusion_score": 0.02652
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 53,
+              "fusion_score": 0.02614
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 28,
+              "fusion_score": 0.02601
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 20,
+              "fusion_score": 0.01613
+            },
+            {
+              "filename": "Group_7_Major_Project_Report_C2CL.pdf",
+              "chunk_index": 19,
+              "fusion_score": 0.01515
+            },
+            {
+              "filename": "research paper ieee.pdf",
+              "chunk_index": 4,
+              "fusion_score": 0.01493
+            }
+          ],
+          "query_variants": [
+            "What AUC-ROC score did the fingerprint recognition model achieve?",
+            "What was the area under the receiver operating characteristic curve for the fingerprint identification system",
+            "What receiver operating characteristic score was attained by the fingerprint recognition algorithm"
+          ],
+          "per_variant_results": [
+            {
+              "query": "What AUC-ROC score did the fingerprint recognition model achieve?",
+              "candidates_found": 20
+            },
+            {
+              "query": "What was the area under the receiver operating characteristic curve for the fingerprint identification system",
+              "candidates_found": 20
+            },
+            {
+              "query": "What receiver operating characteristic score was attained by the fingerprint recognition algorithm",
+              "candidates_found": 20
+            }
+          ]
+        }
+      ],
+      "num_retrieval_attempts": 1,
+      "latency_seconds": 1.28,
+      "type": "answerable",
+      "expected_source_document": "research paper ieee.pdf",
+      "retrieval_recall": true,
+      "reciprocal_rank": 1.0,
+      "keyword_coverage": 1.0,
+      "llm_judge_correct": false,
+      "llm_judge_reasoning": "The answer mentions the AUC-ROC score of the fine-tuned ViT model, but also includes unnecessary information about the sequential CNN model.",
+      "passed": true
+    },
+    {
+      "id": "research_equal_error_rate",
+      "question": "What was the Equal Error Rate of the fine-tuned model?",
+      "type": "error",
+      "passed": false,
+      "error": "Server error '502 Bad Gateway' for url 'http://localhost:8000/query'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_dataset_used",
+      "question": "What fingerprint database was used to evaluate the models?",
+      "type": "error",
+      "passed": false,
+      "error": "Server error '502 Bad Gateway' for url 'http://localhost:8000/query'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "visa_visanet",
+      "question": "What network does Visa operate?",
+      "type": "error",
+      "passed": false,
+      "error": "Server error '502 Bad Gateway' for url 'http://localhost:8000/query'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "negative_unanswerable",
+      "question": "What is the capital of France?",
+      "type": "error",
+      "passed": false,
+      "error": "Server error '502 Bad Gateway' for url 'http://localhost:8000/query'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    }
+  ]
+}

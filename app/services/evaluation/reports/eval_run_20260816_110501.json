@@ -1,0 +1,104 @@
+{
+  "timestamp": "20260816_110501",
+  "results": [
+    {
+      "id": "resume_dynamics365",
+      "question": "What experience does this person have with Dynamics 365?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "resume_sonarqube",
+      "question": "What security tools were used for remediation?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "resume_verc_revenue",
+      "question": "How much annual revenue does the VERC platform enable?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "resume_career_progression",
+      "question": "What was the career progression at Visa, from first role to most recent?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "resume_raahee",
+      "question": "What technology was used at the Raahee internship?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_rank1_accuracy",
+      "question": "What was the Rank-1 accuracy achieved by the fine-tuned Vision Transformer?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_auc_roc",
+      "question": "What AUC-ROC score did the fingerprint recognition model achieve?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_equal_error_rate",
+      "question": "What was the Equal Error Rate of the fine-tuned model?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "research_dataset_used",
+      "question": "What fingerprint database was used to evaluate the models?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "visa_visanet",
+      "question": "What network does Visa operate?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    },
+    {
+      "id": "negative_unanswerable",
+      "question": "What is the capital of France?",
+      "type": "error",
+      "passed": false,
+      "error": "HTTP 502: Groq free-tier rate limit hit (30 requests/min, 14,400/day). Wait a moment and try again.",
+      "latency_seconds": null,
+      "num_retrieval_attempts": 0
+    }
+  ]
+}
