@@ -177,7 +177,7 @@ Every tunable lives in `.env` (copy from `.env.example`):
 |---|---|---|
 | `LLM_PROVIDER` | `ollama` | `ollama` (free/local), `groq` (free/cloud), or `anthropic` (paid/cloud) |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Local model, if using Ollama |
-| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Cloud model, if using Groq — free, no credit card |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Cloud model, if using Groq — free, no credit card. (Was `llama-3.3-70b-versatile` until Groq dropped it from the free/developer tier on 2026-06-17; `openai/gpt-oss-120b` is Groq's recommended replacement.) |
 | `ANTHROPIC_MODEL` | `claude-sonnet-5` | Cloud model, if using Anthropic |
 | `EMBEDDING_DIMENSION` | `384` | Must match the embedding model's actual output size |
 | `CHUNKING_STRATEGY` | `semantic` | `semantic` (sentence-similarity based) or `fixed` (word-count based) |
@@ -452,7 +452,10 @@ form of VAMP is Visa Acquirer Monitoring Program (Excerpt 1)"* — correct,
 confident, properly cited, first attempt, no reformulation needed. Same
 retrieval pipeline, same chunk, same citation format — the only variable
 that changed was model size. This confirms the earlier prediction rather
-than just asserting it.
+than just asserting it. (`llama-3.3-70b-versatile` was the Groq model at
+the time; Groq removed it from the free/developer tier on 2026-06-17, and
+the deployment now runs `openai/gpt-oss-120b` — Groq's recommended
+replacement.)
 
 ### A third case: retrieval worked correctly, but the model still couldn't answer confidently
 
@@ -638,7 +641,7 @@ verified end-to-end at time of writing.
    DATABASE_URL=<the Supabase connection string from step 3>
    LLM_PROVIDER=groq
    GROQ_API_KEY=<your free key from console.groq.com/keys>
-   GROQ_MODEL=llama-3.3-70b-versatile
+   GROQ_MODEL=openai/gpt-oss-120b
    CHUNKING_STRATEGY=fixed
    FIXED_CHUNK_SIZE_WORDS=600
    FIXED_CHUNK_OVERLAP_WORDS=80

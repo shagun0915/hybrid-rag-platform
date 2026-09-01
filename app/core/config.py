@@ -86,9 +86,14 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://host.docker.internal:11434"
     ollama_model: str = "llama3.1:8b"
 
-    # Groq (cloud, free — no credit card required)
+    # Groq (cloud, free — no credit card required).
+    # Groq deprecated llama-3.1-8b-instant and llama-3.3-70b-versatile for
+    # the free/developer tier on 2026-06-17 (enterprise committed-spend
+    # contracts unaffected) — a previously-working key now gets a 404
+    # "model_not_found / you do not have access" for those. Groq's own
+    # recommended migration for the 70B is openai/gpt-oss-120b.
     groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-120b"
 
     # Anthropic (cloud, paid)
     anthropic_api_key: str = ""
