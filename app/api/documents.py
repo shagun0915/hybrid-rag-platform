@@ -13,7 +13,7 @@ Three endpoints, deliberately small in scope for Day 2:
 import uuid
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -63,6 +63,33 @@ async def list_documents(db: AsyncSession = Depends(get_db)):
         }
         for d in documents
     ]
+
+
+@router.delete("/{document_id}")
+async def delete_document(document_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    """
+    Remove a document and all its chunks from the corpus.
+
+    Uploads are otherwise add-only, which means a half-ingested file (an
+    upload that timed out mid-chunking on a constrained host, say) has no
+    way to be cleaned up except raw SQL. This gives the demo UI a delete
+    button and the API a symmetric operation to the upload.
+
+    Chunks are deleted explicitly rather than relying on the FK's
+    ON DELETE CASCADE — the delete then works the same whether or not the
+    database enforces the cascade, and it stays a single transaction.
+    """
+    doc_result = await db.execute(select(Document).where(Document.id == document_id))
+    document = doc_result.scalar_one_or_none()
+    if document is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    filename = document.filename
+    await db.execute(delete(Chunk).where(Chunk.document_id == document_id))
+    await db.execute(delete(Document).where(Document.id == document_id))
+    await db.commit()
+
+    return {"deleted": str(document_id), "filename": filename}
 
 
 @router.get("/{document_id}/chunks")

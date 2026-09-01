@@ -20,7 +20,17 @@ from sqlalchemy import text
 
 from app.core.config import settings
 
-engine = create_async_engine(settings.database_url, echo=False, future=True)
+# connect_args.timeout caps how long asyncpg waits to establish a
+# connection. Without it, a paused/unreachable database (e.g. a Supabase
+# free project that auto-paused after inactivity) makes every connection
+# attempt hang on the OS TCP timeout — long enough that startup's
+# init_db() effectively wedges the whole process. Fail fast instead.
+engine = create_async_engine(
+    settings.database_url,
+    echo=False,
+    future=True,
+    connect_args={"timeout": 10},
+)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine, class_=AsyncSession, expire_on_commit=False
