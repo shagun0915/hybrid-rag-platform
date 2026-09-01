@@ -32,10 +32,18 @@ class QueryRequest(BaseModel):
 
 @router.post("")
 async def query(request: QueryRequest, db: AsyncSession = Depends(get_db)):
-    retrieval_result = await agentic_retrieve(db, request.question)
-    chunks = retrieval_result["chunks"]
-
+    # Wraps the whole pipeline, not just generate_answer — found via a
+    # real stress test (running eval with LLM-as-judge's doubled call
+    # volume): agentic_retrieve() also makes an LLM call internally
+    # (reformulate_query, when a second attempt fires), and that failure
+    # was previously unhandled, falling through to a generic, unhelpful
+    # 500 instead of the same clean 502 a generation failure produces.
+    # Any LLM-related failure anywhere in this endpoint should look the
+    # same to a caller: a clear 502 with a real error message, not one
+    # clean error path and one opaque one depending on which step broke.
     try:
+        retrieval_result = await agentic_retrieve(db, request.question)
+        chunks = retrieval_result["chunks"]
         answer = await generate_answer(request.question, chunks)
     except MissingAPIKeyError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
