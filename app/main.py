@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.security import security_headers_middleware
 from app.api import health, documents, query
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+
+# Security headers on every response (see app/core/security.py).
+app.middleware("http")(security_headers_middleware)
 
 app.include_router(health.router)
 app.include_router(documents.router)

@@ -19,7 +19,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit
 from app.services.retrieval.agentic_retrieval import agentic_retrieve
 from app.services.generation.answer import generate_answer, MissingAPIKeyError
 
@@ -30,7 +32,7 @@ class QueryRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2000)
 
 
-@router.post("")
+@router.post("", dependencies=[Depends(rate_limit("query", settings.rate_limit_query_per_minute))])
 async def query(request: QueryRequest, db: AsyncSession = Depends(get_db)):
     # Wraps the whole pipeline, not just generate_answer — found via a
     # real stress test (running eval with LLM-as-judge's doubled call

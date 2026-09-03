@@ -191,6 +191,9 @@ Every tunable lives in `.env` (copy from `.env.example`):
 | `MIN_RERANK_SCORE` | `0.5` | Confidence threshold that stops the retry loop early |
 | `QUERY_EXPANSION_ENABLED` | `true` | Search with paraphrased variants alongside the literal query |
 | `QUERY_EXPANSION_VARIANTS` | `2` | How many LLM-generated variants to search per attempt |
+| `ADMIN_TOKEN` | `""` (unset) | When set, `DELETE /documents/{id}` requires a matching `X-Admin-Token` header. Unset = open (fine for local dev) |
+| `RATE_LIMIT_QUERY_PER_MINUTE` | `20` | Per-IP cap on `/query` (LLM-backed — throttled to limit cost/DoS abuse) |
+| `RATE_LIMIT_UPLOAD_PER_MINUTE` | `5` | Per-IP cap on `/documents/upload` (embedding-inference-backed) |
 
 ## Evaluation
 
@@ -579,6 +582,43 @@ directly recovered the correct answer.
   system cites which excerpt it used, but doesn't independently verify
   the citation actually supports the claim.
 
+## Security
+
+Every endpoint is unauthenticated on purpose — this is a public demo, not
+a multi-tenant service. That makes the real exposure **cost and abuse**,
+not data theft, so the controls target that:
+
+- **Per-IP rate limits** on the two endpoints that cost money or CPU when
+  hammered: `/query` (LLM calls) and `/documents/upload` (embedding
+  inference). In-memory fixed-window, which is genuinely enough for the
+  single instance the free tier runs — `app/core/rate_limit.py`,
+  deliberately not a Redis/slowapi setup.
+- **Optional admin token** (`ADMIN_TOKEN`) gating the one destructive
+  operation, `DELETE /documents/{id}`. Unset by default so local dev and
+  the offline test suite are unaffected; set it in the deployment and the
+  demo UI's delete button will prompt for it once. Upload and query stay
+  open (the demo needs them) and rely on the rate limit.
+- **Security headers** on every response (HSTS, `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, a CSP scoped to what `/ui` and
+  `/docs` actually load) — `app/core/security.py`.
+- **Secret hygiene:** all credentials are env vars (`app/core/config.py`,
+  Pydantic settings — no literal secrets in source); `.env` is
+  gitignored and has never been committed; `.env.example` ships
+  placeholders only.
+
+Input safety is handled by the stack rather than bespoke code: SQL goes
+through SQLAlchemy with parameterized full-text queries
+(`keyword_search.py`), the demo UI HTML-escapes every server value, file
+uploads are type- and size-checked (`pipeline.py`), and FastAPI's
+defaults keep stack traces server-side.
+
+**Not covered, stated honestly:** prompt injection via a malicious
+uploaded document (the LLM sees uploaded text as context) is a RAG-native
+risk this demo doesn't defend against — low impact for a single-user
+portfolio deployment, real scope for a production system. Same for the
+`/docs` explorer being public: intentional here (it's a portfolio piece),
+worth locking down elsewhere.
+
 ## Deployment
 
 **Recommended: [Render](https://render.com) (API) + [Supabase](https://supabase.com) (database).**
@@ -648,6 +688,7 @@ verified end-to-end at time of writing.
    QUERY_EXPANSION_ENABLED=false
    RETRIEVAL_TOP_K=5
    MAX_RETRIEVAL_ATTEMPTS=1
+   ADMIN_TOKEN=<a long random string — required to delete documents>
    ```
 
 7. **Deploy.** Render builds the Dockerfile and gives you a live URL
