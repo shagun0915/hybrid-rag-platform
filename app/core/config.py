@@ -20,6 +20,22 @@ class Settings(BaseSettings):
     app_name: str = "Enterprise RAG Platform"
     environment: str = "development"
 
+    # Security / abuse control.
+    # Every endpoint is unauthenticated by design (public demo), so the
+    # real exposure is cost/DoS abuse of the LLM-backed and CPU-backed
+    # endpoints, not data theft. Two controls:
+    #  - Per-IP rate limits on the expensive endpoints (in-memory,
+    #    fixed-window — fine for the single free-tier instance the
+    #    deployment actually runs; see app/core/rate_limit.py).
+    #  - An optional admin token gating the one destructive endpoint
+    #    (DELETE /documents/{id}). Empty (the default) = no gate, so
+    #    local dev and the test suite are unaffected; set it in the
+    #    deployment to stop a stranger wiping the corpus. Uploads stay
+    #    open (the demo needs them) and lean on the rate limit instead.
+    admin_token: str = ""
+    rate_limit_query_per_minute: int = 20
+    rate_limit_upload_per_minute: int = 5
+
     # Database (Postgres + pgvector)
     database_url: str = (
         "postgresql+asyncpg://rag_user:rag_password@db:5432/rag_platform"

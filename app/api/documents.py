@@ -1,13 +1,15 @@
 """
 Document API.
 
-Three endpoints, deliberately small in scope for Day 2:
-- POST /documents/upload       -> ingest a file end-to-end
-- GET  /documents              -> list what's been uploaded, with status
-- GET  /documents/{id}/chunks  -> inspect how a document got chunked
-                                   (this is your main debugging tool —
-                                   "did chunking do something sane?" —
-                                   long before there's any retrieval UI)
+Endpoints:
+- POST   /documents/upload       -> ingest a file end-to-end (rate-limited)
+- GET    /documents              -> list what's been uploaded, with status
+- DELETE /documents/{id}         -> remove a document + its chunks
+                                    (gated by ADMIN_TOKEN when set)
+- GET    /documents/{id}/chunks  -> inspect how a document got chunked
+                                    (this is your main debugging tool —
+                                    "did chunking do something sane?" —
+                                    long before there's any retrieval UI)
 """
 
 import uuid
@@ -16,7 +18,10 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
+from app.core.rate_limit import rate_limit
+from app.core.security import require_admin_token
 from app.models.document import Document, Chunk
 from app.services.ingestion.pipeline import ingest_document, FileTooLargeError
 from app.services.ingestion.parser import UnsupportedFileType, EmptyDocumentError
@@ -24,7 +29,10 @@ from app.services.ingestion.parser import UnsupportedFileType, EmptyDocumentErro
 router = APIRouter(prefix="/documents", tags=["documents"])
 
 
-@router.post("/upload")
+@router.post(
+    "/upload",
+    dependencies=[Depends(rate_limit("upload", settings.rate_limit_upload_per_minute))],
+)
 async def upload_document(
     file: UploadFile = File(...), db: AsyncSession = Depends(get_db)
 ):
@@ -65,7 +73,7 @@ async def list_documents(db: AsyncSession = Depends(get_db)):
     ]
 
 
-@router.delete("/{document_id}")
+@router.delete("/{document_id}", dependencies=[Depends(require_admin_token)])
 async def delete_document(document_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     """
     Remove a document and all its chunks from the corpus.

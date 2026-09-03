@@ -422,10 +422,30 @@
     if(!btn) return;
     const { id, name } = btn.dataset;
     if(!confirm(`Remove "${name}" and all its chunks from the corpus?`)) return;
+
+    // The deployment gates DELETE behind an admin token (ADMIN_TOKEN env
+    // var). Local dev usually has no token set, so the first attempt goes
+    // out bare; only if the server answers 401 do we ask for one, then
+    // remember it for the session.
+    let token = '';
+    try{ token = sessionStorage.getItem('adminToken') || ''; }catch(_){}
+
+    const attempt = (tok) => fetch(`/documents/${id}`, {
+      method: 'DELETE',
+      headers: tok ? { 'X-Admin-Token': tok } : {},
+    });
+
     btn.disabled = true;
     try{
-      const res = await fetch(`/documents/${id}`, { method: 'DELETE' });
+      let res = await attempt(token);
+      if(res.status === 401){
+        token = (prompt('Admin token required to delete:') || '').trim();
+        if(!token){ btn.disabled = false; return; }
+        try{ sessionStorage.setItem('adminToken', token); }catch(_){}
+        res = await attempt(token);
+      }
       if(!res.ok){
+        if(res.status === 401){ try{ sessionStorage.removeItem('adminToken'); }catch(_){} }
         const data = await res.json().catch(() => ({}));
         alert(data.detail || 'Delete failed.');
         btn.disabled = false;
