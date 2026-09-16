@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.concurrency import limit_concurrency
 from app.core.database import get_db
 from app.core.rate_limit import rate_limit
 from app.services.retrieval.agentic_retrieval import agentic_retrieve
@@ -43,10 +44,17 @@ async def query(request: QueryRequest, db: AsyncSession = Depends(get_db)):
     # Any LLM-related failure anywhere in this endpoint should look the
     # same to a caller: a clear 502 with a real error message, not one
     # clean error path and one opaque one depending on which step broke.
+    #
+    # limit_concurrency caps how many of these run their pipeline at
+    # once — the per-minute rate limit above doesn't stop several ~30s
+    # requests from overlapping in memory, which is what actually
+    # triggered a real Render OOM restart on the free tier. See
+    # app/core/concurrency.py.
     try:
-        retrieval_result = await agentic_retrieve(db, request.question)
-        chunks = retrieval_result["chunks"]
-        answer = await generate_answer(request.question, chunks)
+        async with limit_concurrency("query", settings.max_concurrent_queries):
+            retrieval_result = await agentic_retrieve(db, request.question)
+            chunks = retrieval_result["chunks"]
+            answer = await generate_answer(request.question, chunks)
     except MissingAPIKeyError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
     except RuntimeError as exc:
