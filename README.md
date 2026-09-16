@@ -605,6 +605,20 @@ not data theft, so the controls target that:
   Pydantic settings — no literal secrets in source); `.env` is
   gitignored and has never been committed; `.env.example` ships
   placeholders only.
+- **Row Level Security on the Supabase tables.** The app itself talks to
+  Postgres directly over `DATABASE_URL` (asyncpg), never through
+  Supabase's PostgREST API — but Supabase still exposes every
+  `public`-schema table over that API by default, and Supabase's own
+  database linter correctly flags `documents`/`chunks` as public with RLS
+  off. Enabling RLS with no policies closes that path (PostgREST's
+  `anon`/`authenticated` roles get denied entirely) without touching the
+  app: the direct connection uses the table owner role, and table owners
+  bypass RLS unless `FORCE ROW LEVEL SECURITY` is also set. Run once, in
+  the Supabase SQL editor:
+  ```sql
+  ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE public.chunks ENABLE ROW LEVEL SECURITY;
+  ```
 
 Input safety is handled by the stack rather than bespoke code: SQL goes
 through SQLAlchemy with parameterized full-text queries
