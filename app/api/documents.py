@@ -19,6 +19,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.concurrency import limit_concurrency
 from app.core.database import get_db
 from app.core.rate_limit import rate_limit
 from app.core.security import require_admin_token
@@ -39,9 +40,14 @@ async def upload_document(
     content = await file.read()
 
     try:
-        document = await ingest_document(
-            db, filename=file.filename, content_type=file.content_type, content=content
-        )
+        # Caps concurrent uploads (default 1) — every chunk gets embedded
+        # before the response returns, so two uploads running at once
+        # double the in-memory embedding work at the same moment. Same
+        # OOM-prevention reasoning as /query — see app/core/concurrency.py.
+        async with limit_concurrency("upload", settings.max_concurrent_uploads):
+            document = await ingest_document(
+                db, filename=file.filename, content_type=file.content_type, content=content
+            )
     except (UnsupportedFileType, EmptyDocumentError, FileTooLargeError) as exc:
         # Client's fault (bad input) -> 400, not 500. Distinguishing these
         # matters: a 500 tells the caller "we broke," a 400 tells them

@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     rate_limit_query_per_minute: int = 20
     rate_limit_upload_per_minute: int = 5
 
+    # Caps concurrent (not just per-minute) in-flight requests to the two
+    # CPU/memory-heavy endpoints — see app/core/concurrency.py for why: a
+    # rate limit alone doesn't stop several ~30s requests from overlapping
+    # in memory at once, which is what actually triggered a real
+    # Render "exceeded its memory limit" restart on the free tier.
+    max_concurrent_queries: int = 1
+    max_concurrent_uploads: int = 1
+
     # Database (Postgres + pgvector)
     database_url: str = (
         "postgresql+asyncpg://rag_user:rag_password@db:5432/rag_platform"
