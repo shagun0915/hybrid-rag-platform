@@ -49,10 +49,10 @@ class Settings(BaseSettings):
         "postgresql+asyncpg://rag_user:rag_password@db:5432/rag_platform"
     )
 
-    # Embeddings — dimension must match whatever embedding model we pick
-    # in Day 2 (e.g. 384 for a small sentence-transformers model,
-    # 1536 for OpenAI text-embedding-3-small). Kept configurable on
-    # purpose — see project spec, section 5: "don't hard-code K/N values."
+    # Embeddings — dimension must match whatever embedding model is in use
+    # (e.g. 384 for a small sentence-transformers model, 1536 for OpenAI
+    # text-embedding-3-small). Kept configurable rather than hard-coded,
+    # same as every other tunable in this class.
     embedding_dimension: int = 384
 
     # Retrieval defaults (also configurable, not hard-coded — Day 4+)

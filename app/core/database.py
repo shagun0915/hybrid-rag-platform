@@ -64,8 +64,8 @@ async def init_db() -> None:
 async def check_db_connection() -> bool:
     """Used by the /health endpoint. Returns False instead of raising,
     so a DB outage degrades the health check rather than crashing it —
-    the same 'don't let one failure cascade' instinct from your
-    production support experience at Visa."""
+    the standard 'don't let one failure cascade' instinct for anything
+    a load balancer or orchestrator polls."""
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))

@@ -124,9 +124,71 @@ Document metadata and embeddings live in the *same* transactional
 database — no syncing two systems, no eventual-consistency gap between
 "what the vector store thinks exists" and what actually does. Standard
 SQL for everything except nearest-neighbor search, which pgvector adds
-as a native column type + index. It's also what let hybrid search (Day
-4) be nearly free to add — the lexical half is just Postgres full-text
+as a native column type + index. It's also what let hybrid search be
+nearly free to add — the lexical half is just Postgres full-text
 search on the same table, no second database to stand up.
+
+## Security
+
+Every endpoint is unauthenticated on purpose — this is a public demo, not
+a multi-tenant service. That makes the real exposure **cost and abuse**,
+not data theft, so the controls target that:
+
+- **Per-IP rate limits** on the two endpoints that cost money or CPU when
+  hammered: `/query` (LLM calls) and `/documents/upload` (embedding
+  inference). In-memory fixed-window, which is enough for the
+  single instance the free tier runs — `app/core/rate_limit.py`,
+  deliberately not a Redis/slowapi setup.
+- **A global concurrency cap** (`MAX_CONCURRENT_QUERIES` /
+  `MAX_CONCURRENT_UPLOADS`, default 1) on top of the per-IP rate limit —
+  `app/core/concurrency.py`. The rate limit alone doesn't stop the
+  problem it was actually built to fix: `/query` can take 20-40s on the
+  free tier, so several different visitors' requests routinely overlap
+  in time even while each individually stays under the per-minute cap.
+  Each concurrent request holds its own embedded vectors, hybrid-search
+  candidates, and cross-encoder buffers in memory at once — this is what
+  triggered a real Render "exceeded its memory limit" restart. A
+  semaphore, not a reject: an extra request waits its turn instead of
+  getting a 503, since the instance is already documented as slow.
+- **Optional admin token** (`ADMIN_TOKEN`) gating the one destructive
+  operation, `DELETE /documents/{id}`. Unset by default so local dev and
+  the offline test suite are unaffected; set it in the deployment and the
+  demo UI's delete button will prompt for it once. Upload and query stay
+  open (the demo needs them) and rely on the rate limit.
+- **Security headers** on every response (HSTS, `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, a CSP scoped to what `/ui` and
+  `/docs` actually load) — `app/core/security.py`.
+- **Secret hygiene:** all credentials are env vars (`app/core/config.py`,
+  Pydantic settings — no literal secrets in source); `.env` is
+  gitignored and has never been committed; `.env.example` ships
+  placeholders only.
+- **Row Level Security on the Supabase tables.** The app itself talks to
+  Postgres directly over `DATABASE_URL` (asyncpg), never through
+  Supabase's PostgREST API — but Supabase still exposes every
+  `public`-schema table over that API by default, and Supabase's own
+  database linter correctly flags `documents`/`chunks` as public with RLS
+  off. Enabling RLS with no policies closes that path (PostgREST's
+  `anon`/`authenticated` roles get denied entirely) without touching the
+  app: the direct connection uses the table owner role, and table owners
+  bypass RLS unless `FORCE ROW LEVEL SECURITY` is also set. Run once, in
+  the Supabase SQL editor:
+  ```sql
+  ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE public.chunks ENABLE ROW LEVEL SECURITY;
+  ```
+
+Input safety is handled by the stack rather than bespoke code: SQL goes
+through SQLAlchemy with parameterized full-text queries
+(`keyword_search.py`), the demo UI HTML-escapes every server value, file
+uploads are type- and size-checked (`pipeline.py`), and FastAPI's
+defaults keep stack traces server-side.
+
+**Not covered:** prompt injection via a malicious
+uploaded document (the LLM sees uploaded text as context) is a RAG-native
+risk this demo doesn't defend against — low impact for a single-user
+portfolio deployment, real scope for a production system. Same for the
+`/docs` explorer being public: intentional here (it's a portfolio piece),
+worth locking down elsewhere.
 
 ## Repo structure
 
@@ -323,7 +385,7 @@ in advance.
 
 ### Retrieval is strong on literal terms, measurably weaker on paraphrases — traced across two real runs
 
-**The original finding (Day 6):** asking **"SonarQube"** directly
+**The original finding, from building the evaluation harness:** asking **"SonarQube"** directly
 retrieves the correct chunk with a cross-encoder rerank score of **0.98**
 — confident, correct, cited. Asking the *semantically identical* **"What
 security tools were used for remediation?"** — never uses the word
@@ -349,7 +411,7 @@ against 4 resume chunks in the corpus, the numerically dominant content
 out-competed the correct chunk for a spot in the initial top-10, before
 reranking ever got a chance to evaluate it.
 
-**What actually recovered the correct answer: the Day 5 agentic retry
+**What actually recovered the correct answer: the agentic retry
 loop.** Attempt 1 scored low confidence (`0.0005`, well under the `0.5`
 threshold), so the system reformulated the query and tried again. The
 reformulation ("...in the recent ransomware attack on the company's
@@ -363,7 +425,7 @@ tools used for remediation were Checkmarx and SonarQube."*
 - Semantic chunking fixed a real bug (fact/context separation) — verified.
 - It did *not* fix corpus-imbalance in initial retrieval — a different,
   still-open problem.
-- The agentic reformulation loop (Day 5) is what actually made this
+- The agentic reformulation loop is what actually made this
   specific query succeed anyway — not by fixing the root cause, but by
   giving the system a second, differently-angled attempt.
 - Absolute rerank scores here were tiny (`0.0004`–`0.0005`) even on the
@@ -561,7 +623,7 @@ Second, re-running the exact live query against the real system:
   expansion in context of **VERC VAMP Remediation Portal** or **ERP VAMP
   Remediation Forms**"* — those exact phrases are lifted directly from
   chunk 0's real title and metadata table, present in attempt 1's own
-  candidate pool. Not a guess — genuinely grounded in the corpus. Score:
+  candidate pool. Not a guess — grounded in the corpus. Score:
   **`0.9832`**, correctly retrieving chunk 0 and producing *"The full
   form of VAMP is Visa Acquirer Monitoring Program (Excerpt 1)"* —
   correct, confident, properly cited.
@@ -583,68 +645,6 @@ directly recovered the correct answer.
 - No claim-level citation verification or human-review queue — the
   system cites which excerpt it used, but doesn't independently verify
   the citation actually supports the claim.
-
-## Security
-
-Every endpoint is unauthenticated on purpose — this is a public demo, not
-a multi-tenant service. That makes the real exposure **cost and abuse**,
-not data theft, so the controls target that:
-
-- **Per-IP rate limits** on the two endpoints that cost money or CPU when
-  hammered: `/query` (LLM calls) and `/documents/upload` (embedding
-  inference). In-memory fixed-window, which is genuinely enough for the
-  single instance the free tier runs — `app/core/rate_limit.py`,
-  deliberately not a Redis/slowapi setup.
-- **A global concurrency cap** (`MAX_CONCURRENT_QUERIES` /
-  `MAX_CONCURRENT_UPLOADS`, default 1) on top of the per-IP rate limit —
-  `app/core/concurrency.py`. The rate limit alone doesn't stop the
-  problem it was actually built to fix: `/query` can take 20-40s on the
-  free tier, so several different visitors' requests routinely overlap
-  in time even while each individually stays under the per-minute cap.
-  Each concurrent request holds its own embedded vectors, hybrid-search
-  candidates, and cross-encoder buffers in memory at once — this is what
-  triggered a real Render "exceeded its memory limit" restart. A
-  semaphore, not a reject: an extra request waits its turn instead of
-  getting a 503, since the instance is already documented as slow.
-- **Optional admin token** (`ADMIN_TOKEN`) gating the one destructive
-  operation, `DELETE /documents/{id}`. Unset by default so local dev and
-  the offline test suite are unaffected; set it in the deployment and the
-  demo UI's delete button will prompt for it once. Upload and query stay
-  open (the demo needs them) and rely on the rate limit.
-- **Security headers** on every response (HSTS, `X-Frame-Options: DENY`,
-  `X-Content-Type-Options: nosniff`, a CSP scoped to what `/ui` and
-  `/docs` actually load) — `app/core/security.py`.
-- **Secret hygiene:** all credentials are env vars (`app/core/config.py`,
-  Pydantic settings — no literal secrets in source); `.env` is
-  gitignored and has never been committed; `.env.example` ships
-  placeholders only.
-- **Row Level Security on the Supabase tables.** The app itself talks to
-  Postgres directly over `DATABASE_URL` (asyncpg), never through
-  Supabase's PostgREST API — but Supabase still exposes every
-  `public`-schema table over that API by default, and Supabase's own
-  database linter correctly flags `documents`/`chunks` as public with RLS
-  off. Enabling RLS with no policies closes that path (PostgREST's
-  `anon`/`authenticated` roles get denied entirely) without touching the
-  app: the direct connection uses the table owner role, and table owners
-  bypass RLS unless `FORCE ROW LEVEL SECURITY` is also set. Run once, in
-  the Supabase SQL editor:
-  ```sql
-  ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
-  ALTER TABLE public.chunks ENABLE ROW LEVEL SECURITY;
-  ```
-
-Input safety is handled by the stack rather than bespoke code: SQL goes
-through SQLAlchemy with parameterized full-text queries
-(`keyword_search.py`), the demo UI HTML-escapes every server value, file
-uploads are type- and size-checked (`pipeline.py`), and FastAPI's
-defaults keep stack traces server-side.
-
-**Not covered, stated honestly:** prompt injection via a malicious
-uploaded document (the LLM sees uploaded text as context) is a RAG-native
-risk this demo doesn't defend against — low impact for a single-user
-portfolio deployment, real scope for a production system. Same for the
-`/docs` explorer being public: intentional here (it's a portfolio piece),
-worth locking down elsewhere.
 
 ## Deployment
 
@@ -733,11 +733,11 @@ verified end-to-end at time of writing.
 9. **Re-upload your documents** — the deployed database starts empty;
    local uploads don't transfer automatically.
 
-### What actually happened on the free tier — a real account, not a hypothetical
+### What actually happened on the free tier
 
 The section above describes the deployment steps; this describes what
-genuinely occurred when they were followed, including two real failures
-found, diagnosed, and fixed — not smoothed over.
+happened when they were followed, including two failures found,
+diagnosed, and fixed.
 
 **Upload failures, first.** Documents over a certain size consistently
 returned `502 Bad Gateway` after 20-30+ seconds — confirmed via browser
@@ -795,18 +795,18 @@ without needing a live public deployment.
 
 ## Build journal
 
-Built incrementally, one focused day at a time, each verified before
+Built incrementally, one milestone at a time, each verified before
 moving to the next:
 
-- **Day 1** — Repo structure, FastAPI skeleton, Postgres+pgvector via Docker, health checks.
-- **Day 2** — Ingestion: parsing (.txt/.md/.pdf), chunking, embeddings (fastembed/bge-small), storage in pgvector.
-- **Day 3** — Baseline RAG: cosine-similarity retrieval -> swappable Ollama/Claude generation -> grounded answer with sources.
-- **Day 4** — Hybrid retrieval: vector + Postgres full-text search, fused via Reciprocal Rank Fusion.
-- **Day 5** — Cross-encoder reranking + agentic query reformulation with a hard iteration cap.
-- **Day 6** — Real evaluation: golden dataset, Recall@K/MRR/keyword coverage, found and fixed two false-failure gaps in the eval harness itself, documented real system limitations discovered along the way.
-- **Day 7** — Deployment guidance, README consolidation, `.dockerignore`, API healthcheck, LICENSE.
+- **Foundation** — Repo structure, FastAPI skeleton, Postgres+pgvector via Docker, health checks.
+- **Ingestion pipeline** — Parsing (.txt/.md/.pdf), chunking, embeddings (fastembed/bge-small), storage in pgvector.
+- **Baseline RAG** — Cosine-similarity retrieval -> swappable Ollama/Claude generation -> grounded answer with sources.
+- **Hybrid retrieval** — Vector + Postgres full-text search, fused via Reciprocal Rank Fusion.
+- **Reranking + agentic retrieval** — Cross-encoder reranking + agentic query reformulation with a hard iteration cap.
+- **Evaluation harness** — Golden dataset, Recall@K/MRR/keyword coverage, found and fixed two false-failure gaps in the eval harness itself, documented real system limitations discovered along the way.
+- **Deployment prep** — Deployment guidance, README consolidation, `.dockerignore`, API healthcheck, LICENSE.
 - **v2 follow-up (semantic chunking)** — Replaced fixed word-count chunking with embedding-similarity-based sentence grouping, fixing the fact/context-separation cause of the SonarQube limitation. Swappable via `CHUNKING_STRATEGY`, not a forced rewrite.
-- **v2 follow-up (candidate-pool visibility + honest re-diagnosis)** — Re-tested the fix against the real system rather than assuming it worked; found the same query still initially failed for a *different* reason (corpus imbalance at the hybrid-search stage, not chunking). Added `pre_rerank_candidates` logging to distinguish "never retrieved" from "retrieved but reranked out." Discovered the Day 5 agentic retry loop — not the chunking fix — was what actually recovered a correct answer. See Known Limitations for the full trace.
+- **v2 follow-up (candidate-pool visibility + honest re-diagnosis)** — Re-tested the fix against the real system rather than assuming it worked; found the same query still initially failed for a *different* reason (corpus imbalance at the hybrid-search stage, not chunking). Added `pre_rerank_candidates` logging to distinguish "never retrieved" from "retrieved but reranked out." Discovered the agentic retry loop — not the chunking fix — was what actually recovered a correct answer. See Known Limitations for the full trace.
 - **v2 follow-up (demo UI)** — Added a frontend at `/ui`, served directly by the same FastAPI app (no separate service, no CORS to configure). Signature feature is a live retrieval-trace visualization — candidate score bars, confidence tags, and the reformulation step rendered visibly — rather than a generic chat window, so the agentic retry loop is something you can watch happen, not just read about.
 - **v2 follow-up (third case study — generation-side failure)** — Using the demo UI on a newly uploaded document, found a case where the system incorrectly denied knowing an answer. Initial hypothesis (same retrieval-miss pattern as the SonarQube case) was checked against real chunk data and found to be **wrong** — retrieval had actually worked correctly. Isolated the real cause via a direct, RAG-pipeline-free test against Ollama: a precision/attribution weakness in the free local model, made measurably worse by the production prompt's added structure. See Known Limitations for the full trace.
 - **v2 follow-up (query expansion)** — Built the fix documented for the corpus-imbalance limitation: every retrieval attempt now searches with the literal question plus a couple of LLM-generated paraphrased variants, fused together via the existing RRF logic (reused, not rewritten). Verified the core mechanism with a controlled simulation — a chunk absent from the literal query's own results still surfaced at rank 2 of 4 after fusion, given real, checkable numbers. Wired into the demo UI's retrieval trace so every phrasing searched is visible live, not just described.
@@ -814,8 +814,8 @@ moving to the next:
 - **v2 follow-up (Groq provider + deployment guide)** — Added Groq as a third LLM provider (free, cloud, no credit card, OpenAI-compatible — same `httpx` pattern as the Ollama integration, no new SDK dependency) specifically to make a public deployment possible without needing paid Anthropic credits. Wrote concrete deployment steps for Koyeb (free Docker + Postgres/pgvector hosting on one platform), stated honestly where the free tier's resource limits are unverified rather than promising it'll definitely work.
 - **v2 follow-up (deployment correction)** — Attempted the actual Koyeb deployment and hit a wall: Mistral AI acquired Koyeb in February 2026, and new users can no longer sign up for its free tier. The recommendation was accurate when written days earlier but had gone stale by the time it was acted on — corrected the deployment guide to Render (API) + Supabase (database, pgvector as a first-class feature) once this was discovered, rather than leaving the outdated guidance in place.
 - **v2 follow-up (live deployment, completed)** — Actually deployed to Render + Supabase, hit two real, distinct free-tier CPU limits in sequence (document uploads timing out, then queries timing out), diagnosed each with real evidence (browser DevTools network traces, not guesses), and fixed both: configurable fixed-chunk size to cut embedding calls on upload, and a leaner retrieval configuration (no query expansion, single attempt, narrower candidate pool) to cut reranking cost on query. Verified end-to-end with a real question against the live public URL, correctly answered and cited on the first attempt. The live deployment intentionally runs a reduced configuration compared to local dev — documented as a deliberate, explained tradeoff, not a hidden compromise.
-- **v2 follow-up (grounded reformulation, fixed and confirmed live)** — Built the fix identified in the fourth case study: `reformulate_query()` now receives the previous attempt's actual retrieved candidates and includes real corpus snippets in its prompt, so it refines around what's actually present instead of guessing an unrelated domain for an ambiguous term (the "VAMP → Vascular Adhesion Molecule" bug). Verified two ways: a regression test built from the real failing case, and a live re-run of the exact original query — reformulation now produces a genuinely grounded rewrite (quoting the real document's actual title text) instead of a wrong-domain guess, and the corrected retrieval jumps from `0.0276` to `0.9832`, recovering the correct, properly-cited answer.
-- **v2 follow-up (LLM-as-judge evaluation)** — Upgraded the eval harness's faithfulness check, which had been documented as a known limitation (substring matching only) since Day 6. Every answerable golden-dataset case now gets a second, independent LLM call judging semantic correctness against a plain-language description of the expected answer, reported alongside — not replacing — the original keyword-coverage check. Disagreements between the two are surfaced explicitly in the report, since they're a genuine diagnostic signal, not noise to average away.
+- **v2 follow-up (grounded reformulation, fixed and confirmed live)** — Built the fix identified in the fourth case study: `reformulate_query()` now receives the previous attempt's actual retrieved candidates and includes real corpus snippets in its prompt, so it refines around what's actually present instead of guessing an unrelated domain for an ambiguous term (the "VAMP → Vascular Adhesion Molecule" bug). Verified two ways: a regression test built from the real failing case, and a live re-run of the exact original query — reformulation now produces a grounded rewrite (quoting the real document's actual title text) instead of a wrong-domain guess, and the corrected retrieval jumps from `0.0276` to `0.9832`, recovering the correct, properly-cited answer.
+- **v2 follow-up (LLM-as-judge evaluation)** — Upgraded the eval harness's faithfulness check, which had been documented as a known limitation (substring matching only) since the evaluation harness was first built. Every answerable golden-dataset case now gets a second, independent LLM call judging semantic correctness against a plain-language description of the expected answer, reported alongside — not replacing — the original keyword-coverage check. Disagreements between the two are surfaced explicitly in the report, since they're a genuine diagnostic signal, not noise to average away.
 - **v2 follow-up (eval fault-tolerance, then a real stress test, then a wrong theory corrected)** — Made `run_eval.py` resilient to individual case failures, since the doubled LLM call volume from adding a judge exposed a real gap (one failed case crashed the entire run). The real run this fix enabled surfaced more: LLM-as-judge catching a genuinely thin answer that keyword coverage had scored perfect (a real win for the feature, on its first live run) and a real code gap in `api/query.py` (only the final generation step had proper error handling, not the retrieval step, which also makes an LLM call) — found via an actual `500`, root-caused, and fixed. The first theory for a wave of `502`s — local Ollama degrading under load — was plausible-sounding but wrong, and was caught rather than left standing: the eval harness's own error capturing had a real gap (discarding the actual response body), fixed, which immediately surfaced the true cause — a Groq free-tier rate limit (30 requests/min), not Ollama at all. Fixed properly: `run_eval.py` now paces itself between cases to stay under the documented limit.
 - **v2 follow-up (live outage — three distinct causes in one sitting)** — The public deployment stopped responding entirely: not a slow cold start, an indefinite hang where even `/health/live` (which never touches the DB) never answered. Root-caused to three separate things, fixed in order: **(1)** the Supabase free-tier database had auto-paused after inactivity, and `init_db()` in the FastAPI lifespan had no error handling — so an unreachable DB at boot took the *whole app* down, leaving Render crash-looping on its "waking up" page. Fixed: startup now logs the failure and serves anyway; `/health/ready` honestly reports `database: unreachable` instead of the whole service being dark. Added a 10s connect timeout so an unreachable DB fails fast instead of hanging. **(2)** Groq removed `llama-3.3-70b-versatile` from its free/developer tier on 2026-06-17 — the previously-working `GROQ_MODEL` now returns a 404. Migrated to `openai/gpt-oss-120b` (Groq's own recommended replacement). **(3)** A half-ingested document (an upload that timed out mid-chunking on the 0.1 vCPU tier) had no way to be removed — uploads were add-only. Added `DELETE /documents/{id}` (document + chunks, one transaction) and a per-row delete button in the demo UI. Each cause verified fixed against the live URL, not just locally.
 - **v2 follow-up (abuse controls — the security pass, scoped to what actually applies)** — Ran a portfolio security checklist against the codebase and found most of it was written for a different shape of app (user accounts, custom auth, payments — none of which this has). The real exposure for an intentionally-unauthenticated public demo is **cost and DoS abuse**, not data theft, so the controls target that: per-IP rate limits on the two endpoints that cost money or CPU when hammered (`/query` → LLM calls, `/documents/upload` → embedding inference), a hand-rolled in-memory fixed-window limiter rather than a Redis/slowapi setup the single free-tier instance doesn't need; an optional `ADMIN_TOKEN` gating the one destructive operation (`DELETE /documents/{id}`), off by default so local dev and the offline test suite are unaffected; and security headers on every response (HSTS, `X-Frame-Options: DENY`, `nosniff`, a CSP scoped to what `/ui` and `/docs` actually load). Verified end-to-end against a local Docker build: the 21st query in a minute returns `429`, `DELETE` returns `401` without a valid token, and both HTML surfaces render with no CSP violations. Honest scope note: prompt injection via a malicious uploaded document is still not defended against — low impact for a single-user demo, real scope for production, documented rather than silently skipped. A useful side effect: the `/query` rate limit also shields the free-tier instance from the exact burst overload that was causing intermittent `502`s.
