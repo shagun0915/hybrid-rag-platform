@@ -1,0 +1,621 @@
+# Engineering log
+
+The detailed version of this project: full configuration reference,
+the complete evaluation methodology (including where it went wrong
+before it went right), every known-limitation case study with real
+numbers, the full deployment story, and the build history.
+
+For the short version — what this is, the architecture, and the
+highlights — see **[README.md](README.md)**.
+
+## Contents
+
+- [Configuration reference](#configuration-reference)
+- [Evaluation](#evaluation)
+- [Known limitations](#known-limitations)
+- [Deployment](#deployment)
+- [Build journal](#build-journal)
+
+---
+
+## Configuration reference
+
+Every tunable lives in `.env` (copy from `.env.example`):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `LLM_PROVIDER` | `ollama` | `ollama` (free/local), `groq` (free/cloud), or `anthropic` (paid/cloud) |
+| `OLLAMA_MODEL` | `llama3.1:8b` | Local model, if using Ollama |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` | Cloud model, if using Groq — free, no credit card. (Was `llama-3.3-70b-versatile` until Groq dropped it from the free/developer tier on 2026-06-17; `openai/gpt-oss-120b` is Groq's recommended replacement.) |
+| `ANTHROPIC_MODEL` | `claude-sonnet-5` | Cloud model, if using Anthropic |
+| `EMBEDDING_DIMENSION` | `384` | Must match the embedding model's actual output size |
+| `CHUNKING_STRATEGY` | `semantic` | `semantic` (sentence-similarity based) or `fixed` (word-count based) |
+| `SEMANTIC_SIMILARITY_THRESHOLD` | `0.55` | Below this cosine similarity between consecutive sentences, start a new chunk |
+| `SEMANTIC_CHUNK_MAX_WORDS` | `300` | Safety cap so a topically-consistent section doesn't become one giant chunk |
+| `SEMANTIC_CHUNK_MIN_WORDS` | `50` | Safety floor so bullet-heavy documents don't fragment into tiny chunks |
+| `RETRIEVAL_TOP_K` | `10` | Candidates retrieved before reranking |
+| `RERANK_TOP_N` | `5` | Final chunks sent to the LLM after reranking |
+| `RRF_K` | `60` | Reciprocal Rank Fusion constant (standard default) |
+| `MAX_RETRIEVAL_ATTEMPTS` | `2` | Hard cap on the agentic retry loop |
+| `MIN_RERANK_SCORE` | `0.5` | Confidence threshold that stops the retry loop early |
+| `QUERY_EXPANSION_ENABLED` | `true` | Search with paraphrased variants alongside the literal query |
+| `QUERY_EXPANSION_VARIANTS` | `2` | How many LLM-generated variants to search per attempt |
+| `ADMIN_TOKEN` | `""` (unset) | When set, `DELETE /documents/{id}` requires a matching `X-Admin-Token` header. Unset = open (fine for local dev) |
+| `RATE_LIMIT_QUERY_PER_MINUTE` | `20` | Per-IP cap on `/query` (LLM-backed — throttled to limit cost/DoS abuse) |
+| `RATE_LIMIT_UPLOAD_PER_MINUTE` | `5` | Per-IP cap on `/documents/upload` (embedding-inference-backed) |
+| `MAX_CONCURRENT_QUERIES` | `1` | How many `/query` requests run their pipeline at once, across *all* callers — not per-IP |
+| `MAX_CONCURRENT_UPLOADS` | `1` | Same, for `/documents/upload` |
+
+---
+
+## Evaluation
+
+```bash
+docker compose exec api python -m app.services.evaluation.run_eval
+```
+
+Calls `/query` for every case in `app/services/evaluation/golden_dataset.py`,
+scores each result, prints a summary table, and saves a full JSON report
+(including per-chunk rerank scores and the exact reformulated queries
+tried) to `app/services/evaluation/reports/`.
+
+**Metrics:** Recall@K, MRR, keyword coverage (fast, free faithfulness
+proxy), LLM-as-judge (a second, independent LLM call assessing semantic
+correctness — see below), and correct-abstention rate (does the system
+say "I don't know" on a genuinely unanswerable question, rather than
+hallucinate).
+
+**LLM-as-judge, added as a v2 follow-up.** Keyword coverage is
+fast and free, but it's just substring presence — it can pass a
+technically-wrong answer that happens to contain the right number, and
+fail a correct answer phrased differently than expected. Every
+answerable case now also gets a second LLM call (`llm_judge.py`) that
+judges whether the answer actually, semantically addresses the
+question, given a plain-language description of what a correct answer
+should say. **Deliberately additive, not a replacement** — both scores
+are reported side by side, and cases where they disagree are flagged
+explicitly in the report rather than averaged away, since a
+disagreement is itself a useful signal about which check is wrong on
+that specific case. Real cost, stated plainly: this roughly doubles the
+number of LLM calls the eval script makes, so a full run takes
+noticeably longer.
+
+**A real problem this doubled load exposed, found immediately on first
+use:** running the suite against local Ollama, the increased sequential
+call volume caused Ollama itself to fail partway through a run — a
+`502 Bad Gateway`, confirmed via the API's own logs to be intentional
+error-translation (a `RuntimeError` from a failed LLM call, correctly
+mapped to 502), not a bug in the new judge code. The eval script itself
+had a real gap here too: one case's failure crashed the *entire* run,
+losing every result that had already succeeded. Fixed: `run_eval.py`
+now catches per-case failures, reports them explicitly as their own
+result type, and continues with the rest of the suite — an eval harness
+calling real, sometimes-flaky external infrastructure should be
+resilient to individual failures, not fragile to them. Verified with a
+simulated mixed batch (2 successes, 1 failure, 1 abstention): aggregate
+math correctly excludes the failed case rather than silently corrupting
+every mean with a `None` value.
+
+**The fault-tolerance fix was then verified for real, not just
+simulated** — and the real run surfaced more than expected. 6 of 11
+cases failed outright (mostly `502`s, one `500`), yet the run completed
+with a full report instead of crashing, exactly as designed.
+
+**LLM-as-judge caught something real on its very first live run.**
+`resume_dynamics365` scored a perfect `1.0` on keyword coverage (it
+contains "Dynamics 365") but the judge marked it **incorrect**:
+*"mentions experience with Dynamics 365 CE, but lacks detail about
+hands-on experience with Dataverse, Power Pages, and Power Automate."*
+That's precisely the gap this feature was built to close — an answer
+that's technically keyword-complete but substantively thin, invisible
+to substring matching, caught by a judge held to the fuller expected
+answer.
+
+**A wrong theory, corrected — worth showing, not hiding.** The first
+case took `~38-40s` and was correct. The next few completed
+suspiciously fast (`~2.8s`) and scored `0.0` across every metric, before
+several more failed outright with `502`s. The first working theory was
+that local Ollama was degrading under sustained sequential load —
+plausible given the pattern, stated with appropriate hedging at the
+time, but **wrong**, and confirmed wrong rather than left as a
+plausible-sounding guess. Two things made the correction possible
+instead of the mistake just persisting:
+
+1. **A real gap in the eval harness's own debugging output.** The
+   original error capturing only recorded httpx's generic status line
+   (`"Server error '502 Bad Gateway' for url '...'"`) — it discarded the
+   actual response body, which is exactly where the real cause lives.
+   Fixed: `run_case()` now extracts the API's actual `detail` message
+   from the response body on any error.
+2. **That fix immediately surfaced the true cause**, no more guessing:
+   `"Groq free-tier rate limit hit (30 requests/min, 14,400/day)"`.
+   Ollama was never involved — the `.env` had already been switched to
+   `LLM_PROVIDER=groq` before this stress test began. With query
+   expansion, possible reformulation, generation, and the separate
+   judge call, a single case can trigger up to 3 Groq calls; 11 cases in
+   rapid succession comfortably exceeds 30 requests/minute.
+
+**Addressed, but not fully solved — verified by testing the fix and
+finding its limits.** `run_eval.py` now paces itself between cases.
+Testing this at 5 seconds reduced failures (8 of 11 down to 6 of 11),
+but didn't eliminate them — real evidence the average call rate was
+already comfortably under Groq's limit (measured ~12/min), pointing to
+burst sensitivity rather than average throughput as the real
+constraint: each case's 2-3 Groq calls fire in a tight cluster with no
+internal spacing, and pacing *between* cases doesn't smooth out that
+*within-case* burst. Increased to 15 seconds for more headroom, stated
+honestly as reducing the failure rate rather than guaranteeing it's
+gone — a fully complete fix would need pacing between the individual
+calls inside a single case too, real additional scope not built here.
+
+**A genuine code gap, found by this stress and fixed.** One earlier
+failure came back as `500 Internal Server Error`, different from the
+rest — traced to `api/query.py` only wrapping the final
+`generate_answer()` call in its error-handling `try/except`, not the
+retrieval step before it. `agentic_retrieve()` also makes an LLM call
+internally (`reformulate_query`, when a second attempt fires), and that
+failure path was completely unhandled, falling through to a generic,
+unhelpful 500 instead of the same clean, informative 502 a generation
+failure produces. **Fixed** — the try/except now wraps the whole
+pipeline, so any LLM-related failure anywhere in `/query` behaves
+consistently.
+
+**Honest scope note:** 11 hand-verified questions, not the 100-300 a
+production suite would have — a deliberate choice for a solo one-week
+build. Every question is traced to content this system has already
+returned correctly during manual testing, so the ground truth itself is
+verified, not guessed. The harness scales to any dataset size without
+code changes.
+
+---
+
+## Known limitations
+
+Found by actually running the system and evaluation suite, not predicted
+in advance.
+
+### Retrieval is strong on literal terms, measurably weaker on paraphrases — traced across two real runs
+
+**The original finding, from building the evaluation harness:** asking **"SonarQube"** directly
+retrieves the correct chunk with a cross-encoder rerank score of **0.98**
+— confident, correct, cited. Asking the *semantically identical* **"What
+security tools were used for remediation?"** — never uses the word
+"SonarQube" — collapsed retrieval confidence to **0.0006**.
+
+**First diagnosed cause: chunking split the fact from its context.** The
+original word-based chunker cut the sentence "...remediation of security
+findings (Checkmarx, SonarQube)" near a boundary, so the retrieved chunk
+contained "SonarQube" but not "remediation." **Fixed** — semantic
+chunking (`semantic_chunker.py`, `CHUNKING_STRATEGY=semantic`) groups
+sentences by embedding-similarity topic shifts instead of fixed word
+counts. Verified directly after re-ingestion: the full sentence now
+stays intact as one chunk.
+
+**But re-testing the exact same paraphrased question after the fix still
+initially failed** — for a *different*, more precise reason, only
+visible after adding `pre_rerank_candidates` logging to the retrieval
+debug trace. On attempt 1, the correct chunk (now containing the full
+"remediation...SonarQube" sentence) **never entered the initial hybrid-
+search candidate pool at all** — not a reranking failure, a retrieval
+failure one stage earlier. With 112 fingerprint-research-paper chunks
+against 4 resume chunks in the corpus, the numerically dominant content
+out-competed the correct chunk for a spot in the initial top-10, before
+reranking ever got a chance to evaluate it.
+
+**What actually recovered the correct answer: the agentic retry
+loop.** Attempt 1 scored low confidence (`0.0005`, well under the `0.5`
+threshold), so the system reformulated the query and tried again. The
+reformulation ("...in the recent ransomware attack on the company's
+network?") was an imperfect paraphrase, but different wording was enough
+to shift hybrid search's ranking — the correct chunk entered attempt 2's
+candidate pool, reranking correctly picked it out, and the LLM generated
+a correct, properly-cited answer: *"According to Excerpt 1, the security
+tools used for remediation were Checkmarx and SonarQube."*
+
+**The honest, complete picture, not simplified:**
+- Semantic chunking fixed a real bug (fact/context separation) — verified.
+- It did *not* fix corpus-imbalance in initial retrieval — a different,
+  still-open problem.
+- The agentic reformulation loop is what actually made this
+  specific query succeed anyway — not by fixing the root cause, but by
+  giving the system a second, differently-angled attempt.
+- Absolute rerank scores here were tiny (`0.0004`–`0.0005`) even on the
+  attempt that produced a *correct* answer — the reranker is poorly
+  calibrated in absolute terms on this corpus, even where its *relative*
+  ranking among candidates still worked. Low confidence didn't mean
+  wrong here, just honestly uncertain.
+
+**Second data point — the same question, run again later, where the
+retry does NOT rescue it:** the exact same paraphrased question, tested
+again via the demo UI's retrieval trace, produced a different outcome.
+Attempt 1 scored `0.0015` (below threshold, resume chunk never in the
+candidate pool). The agentic reformulation this time produced *"What
+security tools were used to remediate vulnerabilities in a recent
+cybersecurity incident"* — a wording that drifted further from the
+actual content, not closer — and attempt 2 scored even lower, `0.0004`.
+The resume chunk containing "SonarQube" never entered either attempt's
+candidate pool.
+
+The system's response: *"There is no mention of security tools used for
+remediation in the provided context."* — a correct abstention, not a
+hallucination. Even with retrieval genuinely failing on both attempts,
+grounding held: the model didn't reach for "SonarQube" from its own
+training data despite obviously knowing what it is.
+
+**What these two runs together actually show:** the agentic retry loop
+is not a reliable fix for corpus-imbalance — sometimes a different
+phrasing surfaces the right chunk, sometimes it drifts further away, and
+which one happens isn't controllable with the current design. What *is*
+reliable, across both outcomes: the system never answered incorrectly.
+It either found the right chunk and cited it, or found nothing and said
+so. That reliability — not the retrieval success rate — is the actual
+engineering property worth highlighting here.
+
+**Fix, now built: query expansion.** Rather than searching with only the
+literal question, every attempt now searches with the question *plus*
+a couple of LLM-generated paraphrased variants (`query_expansion.py`),
+fusing every variant's results together via the same RRF used for
+vector+keyword fusion (`expanded_search.py`) — RRF applied one level up,
+reusing the existing function rather than writing new fusion logic.
+
+**Verified with a controlled simulation first, then confirmed live** on
+the VAMP case from the third case study below. Before expansion, the
+chunk containing the answer scored around `0.01`–`0.04` in fusion score
+and didn't reliably lead the candidate pool. After expansion — searching
+*"What is full form of VAMP"* alongside two generated variants — that
+same chunk led with `0.0492`, the top-ranked candidate by a clear
+margin. That's the retrieval-stage fix working exactly as designed, with
+real before/after numbers, not just a simulation.
+
+**But this also confirms the reranker weakness independently, not just
+theoretically.** Even leading retrieval, that chunk's *rerank* score was
+only `0.0276` — nowhere near the `0.5` confidence threshold. Query
+expansion fixed getting the right chunk into the race; it does nothing
+for the reranker's separate difficulty scoring a correct chunk highly
+once it's paraphrase-distant from the query. Two different bugs, two
+different layers, confirmed independently rather than assumed to be the
+same problem.
+
+**Toggleable, not forced** — `QUERY_EXPANSION_ENABLED` in `.env`, off
+falls back to the original single-query behavior. Visible live in the
+demo UI's retrieval trace: each attempt now shows every phrasing
+searched and how many candidates each one found before fusion, not just
+the final blended result.
+
+**Honest scope note — what this does and doesn't fix:** this targets the
+*retrieval-stage* corpus-imbalance problem (a relevant chunk never
+entering the candidate pool). It does not address the separate
+reranker-vocabulary-mismatch weakness from the original SonarQube
+finding above, or the generation-side precision/attribution weakness
+documented below — those are different layers of the pipeline with
+different causes, and query expansion alone doesn't touch either.
+
+### Small local LLM shows real answer variance between identical runs
+
+Re-running the same 11-question suite three times produced different
+pass/fail results on two borderline questions — not from retrieval
+changing, but from Ollama's `llama3.1:8b` phrasing answers differently
+run to run given weakly-ranked context. A genuine tradeoff of the
+free/local provider path.
+
+**Update — the A/B test flagged above as not yet run has now been run.**
+Adding Groq as a third provider (see Deployment) made a direct,
+same-corpus, same-question comparison possible: the exact VAMP question
+that failed against `llama3.1:8b` across three separate attempts and
+investigation angles (flat denial, hedged misattribution, reformulation
+guessing the wrong domain — see the case studies below) was asked again,
+unchanged, against Groq's `llama-3.3-70b-versatile`. Result: *"The full
+form of VAMP is Visa Acquirer Monitoring Program (Excerpt 1)"* — correct,
+confident, properly cited, first attempt, no reformulation needed. Same
+retrieval pipeline, same chunk, same citation format — the only variable
+that changed was model size. This confirms the earlier prediction rather
+than just asserting it. (`llama-3.3-70b-versatile` was the Groq model at
+the time; Groq removed it from the free/developer tier on 2026-06-17, and
+the deployment now runs `openai/gpt-oss-120b` — Groq's recommended
+replacement.)
+
+### A third case: retrieval worked correctly, but the model still couldn't answer confidently
+
+Uploading a new, unrelated document (an internal design doc mentioning
+"VAMP," an acronym) and asking *"What is full form of VAMP?"* produced a
+flat denial: *"The full form of VAMP is not mentioned in the provided
+context excerpts."* The first hypothesis — that this was the same
+corpus-imbalance retrieval miss as the SonarQube case — turned out to be
+**wrong**, and checking it properly is itself worth documenting.
+
+**What actually happened, verified against the real chunk data** (via
+`GET /documents/{id}/chunks`, cross-checked against the source
+document): the chunk containing the definition — *"The ERP VAMP (Visa
+Acquirer Monitoring Program) Remediation Portal requires..."* — was
+**not** missing from the candidate pool. It was chunk 0, the single
+highest-scored retrieved result (`0.1241`), sitting in plain prose in
+the middle of that chunk's content. Retrieval, chunking, and reranking
+all did their job correctly this time.
+
+**To isolate the real cause, the same chunk and question were tested
+directly against Ollama, completely outside the RAG pipeline** — no
+competing excerpts, no citation-format system prompt, just the one
+chunk and one question piped straight into `ollama run llama3.1:8b`.
+The result: the model *did* locate the correct phrase, but hedged
+instead of committing to it — *"the full form of VAMP is not explicitly
+mentioned... however, it appears to be related to the Visa Acquirer
+Monitoring Program"* — and misattributed where it came from, claiming
+it was "indicated in the document title" (the title never contains that
+phrase; it's in the Overview paragraph). The model found the fact and
+still couldn't cite it precisely.
+
+**And the isolated test's hedged-but-partially-correct answer was
+still better than the real system's flat denial.** The production
+prompt — five "Excerpt N" blocks plus citation-format instructions —
+appears to make this specific weakness *worse* for a model this size,
+not better. Added structure pushed the model toward a confident wrong
+answer instead of the tentative right one it gave with a simpler prompt.
+
+**The honest conclusion:** this is a generation-side precision and
+attribution weakness in the free local model, not a retrieval bug —
+three separate, verified layers of evidence (chunk data, isolated model
+test, prompt-complexity comparison), not a guess. Confirming whether a
+larger model (Claude, via `LLM_PROVIDER=anthropic`) avoids this specific
+failure mode is a natural next test, not yet run here due to API
+billing constraints at the time — noted as an open question rather than
+silently skipped.
+
+### A fourth case: query reformulation guessed the wrong domain — found, fixed, and verified live
+
+Re-running the VAMP question with query expansion enabled surfaced a new
+failure mode, not the one being tested for. Attempt 1 (with expansion)
+correctly promoted the right chunk to the top of retrieval — confirming
+the fix above — but still scored below threshold on rerank, so attempt 2
+fired. The LLM's reformulated query: *"Define VAMP in medical
+terminology"*, which then expanded into variants **"Vascular Adhesion
+Molecule"** and **"Vascular Cell Adhesion Molecule"** — real biology
+terms, entirely unrelated to this corpus, which is about a Visa
+remediation portal.
+
+The reformulation step didn't just reword the question — it **guessed a
+specific, wrong domain** for an ambiguous acronym and searched for that
+guess instead of a paraphrase of what was actually asked. Attempt 2's
+top score dropped to `0.0031`, worse than attempt 1. The system still
+correctly refused to hallucinate an answer from that irrelevant
+context — grounding held once again — but a real opportunity was lost:
+attempt 1's retrieval had already found the right chunk, and
+reformulation searched *away* from it instead of refining around it.
+
+**Root cause:** `reformulate_query()` (`query_reformulation.py`) asks
+the LLM to produce a better search query with no visibility into what's
+actually in the corpus — so for a generic acronym like "VAMP," it falls
+back on the model's own general-knowledge guess about what the acronym
+*probably* means, which has nothing to do with what's actually been
+uploaded.
+
+**Fix, now built and confirmed live** — not just unit tested.
+`reformulate_query()` (`query_reformulation.py`) now accepts the
+previous attempt's actual retrieved candidates — even the low-scoring
+ones — and includes short content snippets from them in the
+reformulation prompt, explicitly instructing the model to base its
+rewrite on what's really in the corpus rather than guessing an unrelated
+meaning for an ambiguous term. The data needed for this fix already
+existed in the loop (attempt 1's own candidates); it just wasn't being
+passed to the reformulation call before.
+
+Verified two ways. First, a regression test built directly from this
+real case: given the actual VAMP definition sentence as a "found but
+low-scoring" candidate, the grounded prompt correctly surfaces "Visa
+Acquirer Monitoring Program" and never reproduces the old wrong guess.
+Second, re-running the exact live query against the real system:
+
+- **Attempt 1** (same as before the fix): `"What is full form of VAMP"`
+  → `0.0276`, below threshold, same starting point as the original bug.
+- **Attempt 2, before this fix** (original case study): reformulated to
+  *"Define VAMP in medical terminology"* → variants like "Vascular
+  Adhesion Molecule" — a wrong domain, guessed from nothing.
+- **Attempt 2, after this fix**: reformulated to *"VAMP acronym
+  expansion in context of **VERC VAMP Remediation Portal** or **ERP VAMP
+  Remediation Forms**"* — those exact phrases are lifted directly from
+  chunk 0's real title and metadata table, present in attempt 1's own
+  candidate pool. Not a guess — grounded in the corpus. Score:
+  **`0.9832`**, correctly retrieving chunk 0 and producing *"The full
+  form of VAMP is Visa Acquirer Monitoring Program (Excerpt 1)"* —
+  correct, confident, properly cited.
+
+A complete before/after trace of the same bug, same question, same
+corpus: wrong-domain guess replaced with a real, grounded rewrite that
+directly recovered the correct answer.
+
+### Other documented tradeoffs (noted inline in code)
+
+- Lexical search is Postgres full-text search, not literal BM25 — a
+  related but different ranking formula (`keyword_search.py`).
+- `to_tsvector` is computed on the fly, not stored in an indexed column
+  — simpler schema, slower than an indexed approach at large scale.
+- Keyword-coverage faithfulness checking is substring presence, not
+  semantic correctness — an LLM-as-judge would be the stronger v2 approach.
+- No OCR/table extraction — scanned PDFs and embedded tables aren't
+  handled (`parser.py`).
+- No claim-level citation verification or human-review queue — the
+  system cites which excerpt it used, but doesn't independently verify
+  the citation actually supports the claim.
+
+---
+
+## Deployment
+
+**Recommended: [Render](https://render.com) (API) + [Supabase](https://supabase.com) (database).**
+An earlier version of this guide recommended Koyeb as a single-platform
+host. That's no longer accurate — Mistral AI acquired Koyeb in February
+2026, and Koyeb's own announcement states new users can no longer sign
+up for the free tier, only paid plans. Found this out by actually
+attempting the deployment, not by re-reading docs in advance — corrected
+here rather than left stale. Splitting across two providers instead of
+one, but both are genuinely free and currently active.
+
+**LLM provider for the public deployment: `LLM_PROVIDER=groq`.** Ollama
+can't run on a free-tier instance (an 8B-parameter model needs several
+GB of RAM these plans don't offer). Anthropic works but requires paid
+credits. Groq is free (no credit card, not a trial) and OpenAI-compatible
+— get a key at [console.groq.com/keys](https://console.groq.com/keys).
+**Verified working**, not just assumed: this exact provider correctly
+answered a question the local Ollama model had failed on three separate
+attempts — see the A/B comparison in Known Limitations.
+
+**Honest resource caveat:** Render's free web service tier is genuinely
+limited, and free instances sleep after 15 minutes of inactivity —
+the next request after sleep takes 30-50 seconds to wake up. Worth
+mentioning to whoever you're showing this to, rather than a silent
+surprise. `fastembed`'s embedding model and the cross-encoder reranker
+both load into memory; whether the free tier's RAM is sufficient is not
+verified end-to-end at time of writing.
+
+### Steps
+
+1. **Push this repo to GitHub** if it isn't already — both platforms
+   deploy from a connected Git repo.
+
+2. **Create a Supabase project** at [supabase.com](https://supabase.com)
+   — no credit card required for the free tier. Once it's provisioned,
+   go to the SQL editor and run:
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+   (The app also tries to create this extension itself at startup, but
+   running it explicitly first removes any doubt about permissions.)
+
+3. **Copy the database connection string** from Supabase's project
+   settings (Database → Connection string, URI format). Keep it
+   somewhere private — don't paste it into a chat window or commit it
+   to the repo.
+
+4. **Create a Render account** at [render.com](https://render.com) —
+   email or GitHub login, no card required for the free tier.
+
+5. **Create a new Web Service** on Render, connected to this GitHub
+   repo. Choose "Docker" as the environment (this project already has a
+   `Dockerfile`, so no buildpack config needed). Set the port to `8000`.
+
+6. **Set environment variables** on the Render service (same names as
+   `.env.example`). This is the configuration actually verified working
+   on Render's free tier — see "What actually happened on the free
+   tier" below for why it looks different from local dev's defaults:
+   ```
+   DATABASE_URL=<the Supabase connection string from step 3>
+   LLM_PROVIDER=groq
+   GROQ_API_KEY=<your free key from console.groq.com/keys>
+   GROQ_MODEL=openai/gpt-oss-120b
+   CHUNKING_STRATEGY=fixed
+   FIXED_CHUNK_SIZE_WORDS=600
+   FIXED_CHUNK_OVERLAP_WORDS=80
+   QUERY_EXPANSION_ENABLED=false
+   RETRIEVAL_TOP_K=5
+   MAX_RETRIEVAL_ATTEMPTS=1
+   ADMIN_TOKEN=<a long random string — required to delete documents>
+   ```
+
+7. **Deploy.** Render builds the Dockerfile and gives you a live URL
+   ending in `.onrender.com`.
+
+8. **Verify it's actually working**, don't just assume:
+   ```bash
+   curl https://<your-app>.onrender.com/health/ready
+   ```
+   Looking for `{"status":"ok","database":"connected"}` — allow for the
+   cold-start delay on the first request. Then open
+   `https://<your-app>.onrender.com/ui` — same demo interface as local,
+   now with a shareable public link.
+
+9. **Re-upload your documents** — the deployed database starts empty;
+   local uploads don't transfer automatically.
+
+### What actually happened on the free tier
+
+The section above describes the deployment steps; this describes what
+happened when they were followed, including two failures found,
+diagnosed, and fixed.
+
+**Upload failures, first.** Documents over a certain size consistently
+returned `502 Bad Gateway` after 20-30+ seconds — confirmed via browser
+DevTools, not guessed. Root cause: semantic chunking embeds every
+sentence individually to detect topic boundaries, and on Render's free
+tier (0.1 vCPU), that many sequential CPU-bound ONNX inference calls
+took long enough to exceed the platform's gateway timeout. Switching to
+`CHUNKING_STRATEGY=fixed` helped but didn't fully solve it for the
+largest documents — the real fix was making fixed-chunk size itself
+configurable (`FIXED_CHUNK_SIZE_WORDS`) and raising it to 600, cutting
+total embedding calls by roughly two-thirds on a research-paper-sized
+document (verified: 50 chunks → 18 chunks for the same text). After
+that, 3 of 4 real documents uploaded successfully; the single largest
+one still occasionally failed — a real, acknowledged boundary of what
+this specific free tier can process in one request, not something
+chased further.
+
+**Query failures, second, after uploads were fixed.** The `/query`
+endpoint itself started 502ing at ~20+ seconds, even on a single
+question. Root cause: with query expansion enabled (searching 3
+phrasings per attempt, up to 2 attempts) and `RETRIEVAL_TOP_K=20`, the
+cross-encoder reranker had to score up to 20 candidates per attempt,
+multiple times — again, CPU-bound work that didn't fit the timeout on
+0.1 vCPU. Fix: for this deployment specifically,
+`QUERY_EXPANSION_ENABLED=false`, `RETRIEVAL_TOP_K=5`, and
+`MAX_RETRIEVAL_ATTEMPTS=1`. **This is a real, deliberate trade — stated
+plainly, not hidden:** the live public deployment runs a leaner
+configuration than local dev. No query expansion, no agentic retry, a
+narrower candidate pool. Local development keeps the fuller
+configuration (wider retrieval, query expansion, the retry loop) since
+compute isn't a constraint there.
+
+**Verified working, with a real example.** After both fixes, asking
+*"what was the rank-1 accuracy of fingerprint detection"* against the
+live deployment returned a confident (`0.8986`), correctly-cited,
+first-attempt answer — `98.49%` for the Vision Transformer, `93.34%`
+for the Sequential CNN, correctly distinguishing them — sourced from the
+actual conclusion section of the uploaded paper. Real evidence the
+reduced-but-real pipeline works end-to-end in production, not just
+locally.
+
+If you hit the same 502s attempting this deployment yourself, the same
+progression — smaller chunks, then fewer candidates and one attempt
+instead of two — is the place to start, not a sign something is broken
+in the code.
+
+### Simpler alternative
+
+Keep this as a local-only project and record a short demo (screen
+capture of `/ui` showing the retrieval trace live, or a walkthrough of
+the `/docs` API explorer) for your portfolio. Genuinely sufficient for
+demonstrating the engineering to a recruiter or interviewer — the
+retrieval trace UI was built specifically to make this compelling
+without needing a live public deployment.
+
+---
+
+## Build journal
+
+Built incrementally, one milestone at a time, each verified before
+moving to the next:
+
+- **Foundation** — Repo structure, FastAPI skeleton, Postgres+pgvector via Docker, health checks.
+- **Ingestion pipeline** — Parsing (.txt/.md/.pdf), chunking, embeddings (fastembed/bge-small), storage in pgvector.
+- **Baseline RAG** — Cosine-similarity retrieval -> swappable Ollama/Claude generation -> grounded answer with sources.
+- **Hybrid retrieval** — Vector + Postgres full-text search, fused via Reciprocal Rank Fusion.
+- **Reranking + agentic retrieval** — Cross-encoder reranking + agentic query reformulation with a hard iteration cap.
+- **Evaluation harness** — Golden dataset, Recall@K/MRR/keyword coverage, found and fixed two false-failure gaps in the eval harness itself, documented real system limitations discovered along the way.
+- **Deployment prep** — Deployment guidance, README consolidation, `.dockerignore`, API healthcheck, LICENSE.
+- **v2 follow-up (semantic chunking)** — Replaced fixed word-count chunking with embedding-similarity-based sentence grouping, fixing the fact/context-separation cause of the SonarQube limitation. Swappable via `CHUNKING_STRATEGY`, not a forced rewrite.
+- **v2 follow-up (candidate-pool visibility + honest re-diagnosis)** — Re-tested the fix against the real system rather than assuming it worked; found the same query still initially failed for a *different* reason (corpus imbalance at the hybrid-search stage, not chunking). Added `pre_rerank_candidates` logging to distinguish "never retrieved" from "retrieved but reranked out." Discovered the agentic retry loop — not the chunking fix — was what actually recovered a correct answer. See Known Limitations for the full trace.
+- **v2 follow-up (demo UI)** — Added a frontend at `/ui`, served directly by the same FastAPI app (no separate service, no CORS to configure). Signature feature is a live retrieval-trace visualization — candidate score bars, confidence tags, and the reformulation step rendered visibly — rather than a generic chat window, so the agentic retry loop is something you can watch happen, not just read about.
+- **v2 follow-up (third case study — generation-side failure)** — Using the demo UI on a newly uploaded document, found a case where the system incorrectly denied knowing an answer. Initial hypothesis (same retrieval-miss pattern as the SonarQube case) was checked against real chunk data and found to be **wrong** — retrieval had actually worked correctly. Isolated the real cause via a direct, RAG-pipeline-free test against Ollama: a precision/attribution weakness in the free local model, made measurably worse by the production prompt's added structure. See Known Limitations for the full trace.
+- **v2 follow-up (query expansion)** — Built the fix documented for the corpus-imbalance limitation: every retrieval attempt now searches with the literal question plus a couple of LLM-generated paraphrased variants, fused together via the existing RRF logic (reused, not rewritten). Verified the core mechanism with a controlled simulation — a chunk absent from the literal query's own results still surfaced at rank 2 of 4 after fusion, given real, checkable numbers. Wired into the demo UI's retrieval trace so every phrasing searched is visible live, not just described.
+- **v2 follow-up (fourth case study — reformulation guessing wrong domains)** — Re-tested the VAMP case live with query expansion enabled. Confirmed the fix worked at the retrieval stage (the right chunk moved from a weak, unreliable score to the top of the candidate pool) and independently confirmed the reranker weakness (still scored below threshold despite leading retrieval). Also surfaced a new failure mode along the way: query reformulation guessed a specific, wrong domain for an ambiguous acronym ("VAMP" → biology terms) instead of refining the actual question, making the retry worse than the original attempt. Grounding still held — no hallucinated answer — but a real opportunity was lost. Root-caused to `reformulate_query()` having no visibility into the corpus it's supposedly helping search.
+- **v2 follow-up (Groq provider + deployment guide)** — Added Groq as a third LLM provider (free, cloud, no credit card, OpenAI-compatible — same `httpx` pattern as the Ollama integration, no new SDK dependency) specifically to make a public deployment possible without needing paid Anthropic credits. Wrote concrete deployment steps for Koyeb (free Docker + Postgres/pgvector hosting on one platform), stated honestly where the free tier's resource limits are unverified rather than promising it'll definitely work.
+- **v2 follow-up (deployment correction)** — Attempted the actual Koyeb deployment and hit a wall: Mistral AI acquired Koyeb in February 2026, and new users can no longer sign up for its free tier. The recommendation was accurate when written days earlier but had gone stale by the time it was acted on — corrected the deployment guide to Render (API) + Supabase (database, pgvector as a first-class feature) once this was discovered, rather than leaving the outdated guidance in place.
+- **v2 follow-up (live deployment, completed)** — Actually deployed to Render + Supabase, hit two real, distinct free-tier CPU limits in sequence (document uploads timing out, then queries timing out), diagnosed each with real evidence (browser DevTools network traces, not guesses), and fixed both: configurable fixed-chunk size to cut embedding calls on upload, and a leaner retrieval configuration (no query expansion, single attempt, narrower candidate pool) to cut reranking cost on query. Verified end-to-end with a real question against the live public URL, correctly answered and cited on the first attempt. The live deployment intentionally runs a reduced configuration compared to local dev — documented as a deliberate, explained tradeoff, not a hidden compromise.
+- **v2 follow-up (grounded reformulation, fixed and confirmed live)** — Built the fix identified in the fourth case study: `reformulate_query()` now receives the previous attempt's actual retrieved candidates and includes real corpus snippets in its prompt, so it refines around what's actually present instead of guessing an unrelated domain for an ambiguous term (the "VAMP → Vascular Adhesion Molecule" bug). Verified two ways: a regression test built from the real failing case, and a live re-run of the exact original query — reformulation now produces a grounded rewrite (quoting the real document's actual title text) instead of a wrong-domain guess, and the corrected retrieval jumps from `0.0276` to `0.9832`, recovering the correct, properly-cited answer.
+- **v2 follow-up (LLM-as-judge evaluation)** — Upgraded the eval harness's faithfulness check, which had been documented as a known limitation (substring matching only) since the evaluation harness was first built. Every answerable golden-dataset case now gets a second, independent LLM call judging semantic correctness against a plain-language description of the expected answer, reported alongside — not replacing — the original keyword-coverage check. Disagreements between the two are surfaced explicitly in the report, since they're a genuine diagnostic signal, not noise to average away.
+- **v2 follow-up (eval fault-tolerance, then a real stress test, then a wrong theory corrected)** — Made `run_eval.py` resilient to individual case failures, since the doubled LLM call volume from adding a judge exposed a real gap (one failed case crashed the entire run). The real run this fix enabled surfaced more: LLM-as-judge catching a genuinely thin answer that keyword coverage had scored perfect (a real win for the feature, on its first live run) and a real code gap in `api/query.py` (only the final generation step had proper error handling, not the retrieval step, which also makes an LLM call) — found via an actual `500`, root-caused, and fixed. The first theory for a wave of `502`s — local Ollama degrading under load — was plausible-sounding but wrong, and was caught rather than left standing: the eval harness's own error capturing had a real gap (discarding the actual response body), fixed, which immediately surfaced the true cause — a Groq free-tier rate limit (30 requests/min), not Ollama at all. Fixed properly: `run_eval.py` now paces itself between cases to stay under the documented limit.
+- **v2 follow-up (live outage — three distinct causes in one sitting)** — The public deployment stopped responding entirely: not a slow cold start, an indefinite hang where even `/health/live` (which never touches the DB) never answered. Root-caused to three separate things, fixed in order: **(1)** the Supabase free-tier database had auto-paused after inactivity, and `init_db()` in the FastAPI lifespan had no error handling — so an unreachable DB at boot took the *whole app* down, leaving Render crash-looping on its "waking up" page. Fixed: startup now logs the failure and serves anyway; `/health/ready` honestly reports `database: unreachable` instead of the whole service being dark. Added a 10s connect timeout so an unreachable DB fails fast instead of hanging. **(2)** Groq removed `llama-3.3-70b-versatile` from its free/developer tier on 2026-06-17 — the previously-working `GROQ_MODEL` now returns a 404. Migrated to `openai/gpt-oss-120b` (Groq's own recommended replacement). **(3)** A half-ingested document (an upload that timed out mid-chunking on the 0.1 vCPU tier) had no way to be removed — uploads were add-only. Added `DELETE /documents/{id}` (document + chunks, one transaction) and a per-row delete button in the demo UI. Each cause verified fixed against the live URL, not just locally.
+- **v2 follow-up (abuse controls — the security pass, scoped to what actually applies)** — Ran a portfolio security checklist against the codebase and found most of it was written for a different shape of app (user accounts, custom auth, payments — none of which this has). The real exposure for an intentionally-unauthenticated public demo is **cost and DoS abuse**, not data theft, so the controls target that: per-IP rate limits on the two endpoints that cost money or CPU when hammered (`/query` → LLM calls, `/documents/upload` → embedding inference), a hand-rolled in-memory fixed-window limiter rather than a Redis/slowapi setup the single free-tier instance doesn't need; an optional `ADMIN_TOKEN` gating the one destructive operation (`DELETE /documents/{id}`), off by default so local dev and the offline test suite are unaffected; and security headers on every response (HSTS, `X-Frame-Options: DENY`, `nosniff`, a CSP scoped to what `/ui` and `/docs` actually load). Verified end-to-end against a local Docker build: the 21st query in a minute returns `429`, `DELETE` returns `401` without a valid token, and both HTML surfaces render with no CSP violations. Honest scope note: prompt injection via a malicious uploaded document is still not defended against — low impact for a single-user demo, real scope for production, documented rather than silently skipped. A useful side effect: the `/query` rate limit also shields the free-tier instance from the exact burst overload that was causing intermittent `502`s.
+- **v2 follow-up (Supabase RLS lint)** — Supabase's own database linter flagged `public.documents` and `public.chunks` as `rls_disabled_in_public` (ERROR level). The app never queries through Supabase's PostgREST API — it talks to Postgres directly over `DATABASE_URL` — but Supabase still exposes every `public`-schema table over that API regardless, so the finding was real: nothing stopped a caller with the project's `anon` key from hitting the REST endpoint directly, bypassing the app's rate limits and admin-token gate entirely. Fixed with `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` and zero policies on both tables — verified this doesn't touch the app itself, since the direct connection uses the table-owning role and table owners bypass RLS unless `FORCE ROW LEVEL SECURITY` is also set (it isn't). Confirmed live: `/health/ready` and a real `/query` both still worked immediately after.
+- **v2 follow-up (a real Render OOM restart, root-caused, not just noted)** — Render emailed that the instance "exceeded its memory limit" and auto-restarted. The per-IP rate limits added days earlier cap requests *per minute*, but don't cap *concurrent* ones — `/query` takes 20-40s on this tier, so several different visitors' requests routinely overlap in time while each individually stays under the per-minute cap, and each concurrent request holds its own embedded vectors, hybrid-search candidates, and cross-encoder buffers in memory at once. Fixed with a global `asyncio.Semaphore` (`MAX_CONCURRENT_QUERIES`/`MAX_CONCURRENT_UPLOADS`, default 1) wrapping the CPU/memory-heavy path in both endpoints — an extra request waits its turn instead of piling on more concurrent memory. Verified with real, timestamped instrumentation against a running server (not just the isolated primitive): three requests fired simultaneously showed a strict `acquire → hold → release → next acquires` sequence on one process, zero overlap. Sized at 1 deliberately, not arbitrarily — the free tier is one real CPU core, so a second concurrent CPU-bound inference call was only ever adding peak memory, never added throughput.
+
+---
+
+[← Back to README](README.md)
